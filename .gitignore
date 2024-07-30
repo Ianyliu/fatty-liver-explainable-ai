@@ -178,6 +178,7 @@ custom_lime_results/
 lime_test_results/
 *.out
 wget-log
+*.png
 
 # Temporary files 
 temp.py
