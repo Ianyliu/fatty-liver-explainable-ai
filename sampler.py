@@ -559,19 +559,3 @@ class Sampler:
             self.save_results(mi_id_dict=self.mi_id_dict,
                             pred_result_dict=pred_result_dict,
                             use_mp=use_mp)
-
-        # pred_result_dict = self.predict_on_all_subj(mi_id_dict=self.mi_id_dict,
-        #                                              all_subj_samples=all_subj_samples,
-        #                                              )
-        # self.save_results(mi_id_dict=self.mi_id_dict,
-        #                   pred_result_dict=pred_result_dict,
-        #                   use_mp=use_mp)
-    
-    # def cluster_sampling_pipeline(self, num_samples: Optional[int] = None, use_mp: bool = True) -> :
-    #     pass
-    
-
-# a pipeline function, able to start from last run time in a folder 
-
-# a separate class for calculating conditional relationships, create bar plots as shown
-# a separate class for 

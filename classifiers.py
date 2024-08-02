@@ -540,9 +540,11 @@ class ElasticNetClassifierWithStats:
         if self.verbose:
             print("Boostrapping...")
                 
-        bootstrap_results = Parallel(n_jobs=self.n_jobs)(
-            delayed(self.bootstrap_fit)(self.X, self.y) for _ in range(self.n_bootstrap_iterations)
-        )
+        # bootstrap_results = Parallel(n_jobs=self.n_jobs)(
+        #     delayed(self.bootstrap_fit)(self.X, self.y) for _ in range(self.n_bootstrap_iterations)
+        # )
+        
+        bootstrap_results = [self.bootstrap_fit(self.X, self.y) for _ in range(self.n_bootstrap_iterations)]
         
         self.bootstrap_coefs = np.array(bootstrap_results)
         self.se_ = np.std(self.bootstrap_coefs, axis=0, ddof=1)
