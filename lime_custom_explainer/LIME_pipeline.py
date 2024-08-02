@@ -3,9 +3,10 @@ import datetime
 import gc
 import itertools
 import os
-import time
 import random
+import time
 from dataclasses import dataclass
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -25,40 +26,8 @@ from sklearn.metrics import confusion_matrix  # isort:skip # nopep8
 
 from torch_geometric.data import Data
 from tqdm import tqdm
+
 from usflc_xai import datasets, models
-
-# import ast
-# import datetime
-# import gc
-# import glob
-# import os
-# import time
-# from dataclasses import dataclass
-# import matplotlib.pyplot as plt
-# import numpy as np
-# import pandas as pd
-# import torch
-# import torchvision
-# import torchvision.transforms as transforms
-# from lime import lime_image
-# from lime.wrappers.scikit_image import SegmentationAlgorithm
-# from PIL import Image
-# from skimage.segmentation import mark_boundaries
-
-# # this enables 10-100X acceleration of scikit-learn, see https://intel.github.io/scikit-learn-intelex/latest/ for more details
-# from sklearnex import patch_sklearn
-# patch_sklearn()
-# from sklearn.linear_model import HuberRegressor, SGDRegressor
-# from sklearn.metrics import confusion_matrix
-
-# from torch_geometric.data import Data
-# from tqdm import tqdm
-# from usflc_xai import datasets, models
-
-
-print(torch.__version__)
-print(torchvision.__version__)
-
 
 @dataclass
 class LIME_pipeline:

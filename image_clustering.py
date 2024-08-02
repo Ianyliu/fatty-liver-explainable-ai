@@ -1,68 +1,45 @@
-import inspect
-import sys 
-from tqdm import tqdm
 import ast
-import pandas as pd 
 import datetime
 import glob
-import json 
+import inspect
+import json
+import multiprocessing as mp
 import os
-from PIL import Image
+import sys
+import time
+from dataclasses import dataclass, field
+from typing import Callable, Dict, List
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
 import torch
 import torchvision.transforms as transforms
-from sklearn.metrics import silhouette_score
-from dotenv import load_dotenv
-import seaborn as sns
-from usflc_xai import models, datasets
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
-import numpy as np
-import multiprocessing as mp
-
-# from sklearnex import patch_sklearn
-# patch_sklearn()
-
-from sklearn.manifold import (
-    MDS,
-    TSNE,
-    Isomap,
-    LocallyLinearEmbedding,
-)
-from openTSNE import TSNE as open_TSNE
 import umap
-
-from communities.algorithms import spectral_clustering
-from communities.algorithms import girvan_newman
-
-from sklearn.cluster import KMeans
-import time 
-from sklearn.cluster import (AffinityPropagation, 
-                             AgglomerativeClustering, 
-                             SpectralClustering,
-                            #  HDBSCAN,
-                             )
-
-from sklearn.decomposition import (KernelPCA, NMF, SparsePCA, 
-                                   PCA, FactorAnalysis, LatentDirichletAllocation,
-                                   DictionaryLearning, 
-                                   )
-
-from graph_based_clustering import SpanTreeConnectedComponentsClustering
-from sklearn.pipeline import make_pipeline
-from graph_based_clustering import ConnectedComponentsClustering
-from communities.algorithms import louvain_method, hierarchical_clustering, girvan_newman
+from adjustText import adjust_text
+from communities.algorithms import (girvan_newman, hierarchical_clustering,
+                                    louvain_method, spectral_clustering)
 from communities.visualization import draw_communities
-from communities.algorithms import hierarchical_clustering
-load_dotenv()
-
-# import tsnecuda
-# tsnecuda.test()
+from dotenv import load_dotenv
+from graph_based_clustering import (ConnectedComponentsClustering,
+                                    SpanTreeConnectedComponentsClustering)
+from matplotlib.ticker import MaxNLocator
+from openTSNE import TSNE as open_TSNE
+from sklearn.cluster import (AffinityPropagation, AgglomerativeClustering,
+                             KMeans, SpectralClustering)
+from sklearn.decomposition import (NMF, PCA, DictionaryLearning,
+                                   FactorAnalysis, KernelPCA,
+                                   LatentDirichletAllocation, SparsePCA)
+from sklearn.manifold import MDS, TSNE, Isomap, LocallyLinearEmbedding
+from sklearn.metrics import silhouette_score
+from sklearn.pipeline import make_pipeline
+from tqdm import tqdm
 from tsnecuda import TSNE as TSNE_GPU
 
-from dataclasses import dataclass, field
-import pandas as pd
-from typing import List, Dict, Callable
-from adjustText import adjust_text
+from usflc_xai import datasets, models
+
+load_dotenv()
 
 @dataclass
 class CustomClustering:
@@ -281,21 +258,7 @@ class CustomClustering:
 
         return mi_id_corr_path_dict
 
-        
-    # def get_all_subj_img_embeddings(self):
-    #     assert self._miid_to_img_ids_dict is not None
-    #     assert self.mi_ids is not None
-        
-    #     if self._miid_to_img_filepaths_dict is None:
-    #         self._miid_to_img_filepaths_dict = self.get_mi_ids_img_filepaths()
-            
-    # def get_all_subj_corr(self):
-    #     return
-    #     assert self._miid_to_img_ids_dict is not None
-    #     assert self.mi_ids is not None
-        
-    #     if self._miid_to_img_filepaths_dict is None:
-    #         self._miid_to_img_filepaths_dict = self.get_mi_ids_img_filepaths()
+
             
        
     def get_all_subj_metadata(self):
@@ -340,51 +303,6 @@ class CustomClustering:
         mi_id = subj_data.get('mi_id') 
         img_id_list = subj_data.get('img_id_list') 
         max_n_clusters = max((len(img_id_list) - 3), min_n_clusters)
-        
-        # clustering_result_dict = {
-        #     "span_tree_connected_components": self.get_span_tree_connected_components_clusterings(adj_matrix=subj_adjacency_matrix,
-        #                                                                                           img_embedding=subj_img_embedding,
-        #                                                                                           min_n_clusters=min_n_clusters,
-        #                                                                                           max_n_clusters=max_n_clusters,),
-        #     "connected_components": self.get_connected_components_clusterings(adj_matrix=subj_adjacency_matrix,
-        #                                                                       img_embedding=subj_img_embedding,
-        #                                                                       min_n_clusters=min_n_clusters,
-        #                                                                       max_n_clusters=max_n_clusters,
-        #                                                                       max_iter=max_clustering_iter,),
-        #     "louvain": self.get_louvain_clusterings(adj_matrix=subj_adjacency_matrix,
-        #                                             img_embedding=subj_img_embedding,
-        #                                             min_n_clusters=min_n_clusters,
-        #                                             max_n_clusters=max_n_clusters,),
-        #     "hierarchical": self.get_hierarchical_clusterings(adj_matrix=subj_adjacency_matrix,
-        #                                                       img_embedding=subj_img_embedding,
-        #                                                       min_n_clusters=min_n_clusters,
-        #                                                       max_n_clusters=max_n_clusters,),
-        #     "kmeans": self.get_k_means_clusterings(
-        #         img_embedding=subj_img_embedding,
-        #         min_n_clusters=min_n_clusters,
-        #         max_n_clusters=max_n_clusters,
-        #         max_iter=max_clustering_iter,),
-        #     "hdbscan": self.get_hdbscan_clusterings(
-        #                                                img_embedding=subj_img_embedding,
-        #                                                min_n_clusters=min_n_clusters,
-        #                                                max_n_clusters=max_n_clusters,
-        #                                                max_iter=max_clustering_iter,),
-        #     "affinity_propagation": self.get_affinity_propagation_clusterings(
-        #         img_embedding=subj_img_embedding,
-        #         min_n_clusters=min_n_clusters,
-        #         max_n_clusters=max_n_clusters,
-        #         max_iter=max_clustering_iter,),
-        #     "agglomerative": self.get_agglomerative_clusterings(
-        #         img_embedding=subj_img_embedding,
-        #         min_n_clusters=min_n_clusters,
-        #         max_n_clusters=max_n_clusters,
-        #         max_iter=max_clustering_iter,),
-        #     "spectral_embedding_based": self.get_spectral_embedding_based_clusterings(
-        #         img_embedding=subj_img_embedding,
-        #         min_n_clusters=min_n_clusters,
-        #         max_n_clusters=max_n_clusters,
-        #         max_iter=max_clustering_iter,),
-        # }
         
         clustering_result_dict = dict.fromkeys([
             "best_silhouette_score",
@@ -672,53 +590,12 @@ class CustomClustering:
         clustering_result_dict["subj_adjacency_matrix"] = subj_adjacency_matrix
         clustering_result_dict["max_n_clusters"] = max_n_clusters
         clustering_result_dict["min_n_clusters"] = min_n_clusters
-        # clustering_result_dict["span_tree_connected_components_clusterings"] = span_tree_connected_components_results["span_tree_best_cluster_labels"]
-        # clustering_result_dict["span_tree_connected_components_n_clusters"] = span_tree_connected_components_results["span_tree_best_n_clusters"]
-        # clustering_result_dict["span_tree_connected_components_best_silhouette_score"] = span_tree_connected_components_results["span_tree_best_silhouette_score"]
-        # clustering_result_dict["connected_components_clusterings"] = connected_components_results["connected_components_best_cluster_labels"]
-        # clustering_result_dict["connected_components_best_threshold"] = connected_components_results["connected_components_best_threshold"]
-        # clustering_result_dict["connected_components_best_metric"] = connected_components_results["connected_components_best_metric"]
-        # clustering_result_dict["connected_components_best_silhouette_score"] = connected_components_results["connected_components_best_silhouette_score"]
-        # clustering_result_dict["louvain_clusterings"] = louvain_results["louvain_best_cluster_labels"]
-        # clustering_result_dict["louvain_best_silhouette_score"] = louvain_results["louvain_best_silhouette_score"]
-        # clustering_result_dict["hierarchical_clusterings"] = hierarchical_results["hierarchical_best_cluster_labels"]
-        # clustering_result_dict["hierarchical_best_metric"] = hierarchical_results["hierarchical_best_metric"]
-        # clustering_result_dict["hierarchical_best_linkage_type"] = hierarchical_results["hierarchical_best_linkage"]
-        # clustering_result_dict["hierarchical_best_silhouette_score"] = hierarchical_results["hierarchical_best_silhouette_score"]
-        # clustering_result_dict["kmeans_clusterings"] = k_means_results["k_means_best_cluster_labels"]
-        # clustering_result_dict["kmeans_n_clusters"] = k_means_results["k_means_best_n_clusters"]
-        # clustering_result_dict["kmeans_best_silhouette_score"] = k_means_results["k_means_best_silhouette_score"]
-        # clustering_result_dict["hdbscan_clusterings"] = hdbscan_results["hdbscan_best_cluster_labels"]
-        # clustering_result_dict["hdbscan_best_silhouette_score"] = hdbscan_results["hdbscan_best_silhouette_score"] 
-        # clustering_result_dict["hdbscan_best_cluster_selection_method"] = hdbscan_results["hdbscan_best_cluster_selection_method"]        
-        # clustering_result_dict["affinity_propagation_clusterings"] = affinity_propagation_results["affinity_propagation_best_cluster_labels"]
-        # clustering_result_dict["affinity_propagation_best_silhouette_score"] = affinity_propagation_results["affinity_propagation_best_silhouette_score"] 
-        # clustering_result_dict["agglomerative_clusterings"] = agglomerative_results["agglomerative_best_cluster_labels"]
-        # clustering_result_dict["agglomerative_best_n_clusters"] = agglomerative_results["agglomerative_best_n_clusters"] 
-        # clustering_result_dict["agglomerative_best_silhouette_score"] = agglomerative_results["agglomerative_best_silhouette_score"] 
-        # clustering_result_dict["spectral_embedding_based_clusterings"] = spectral_embedding_based_results["spectral_embedding_based_best_cluster_labels"]
-        # clustering_result_dict["spectral_embedding_based_best_affinity_method"] = spectral_embedding_based_results["spectral_embedding_based_best_affinity_method"] 
-        # clustering_result_dict["spectral_embedding_based_best_n_clusters"] = spectral_embedding_based_results["spectral_embedding_based_best_n_clusters"] 
-        # clustering_result_dict["spectral_embedding_based_best_silhouette_score"] = spectral_embedding_based_results["spectral_embedding_based_best_silhouette_score"] 
-        
-        # low_dimensional_embedding_results["tsne_best_perplexity"] =  tsne_embedding_results["best_perplexity"]
-        # low_dimensional_embedding_results["tsne_best_kl_divergence"] = tsne_embedding_results["best_kl_divergence"]
+
         clustering_result_dict["low_dimensional_embedding_results"] = low_dimensional_embedding_results
         clustering_result_dict = clustering_result_dict | low_dimensional_embedding_results
         
-        # clustering_result_dict["mds_embeddings_results"] = mds_embedding_results
-        # clustering_result_dict["isomap_embeddings_results"] = isomap_results
-        # clustering_result_dict["kernel_pca_embedding_results"] = kernel_pca_embedding_results
-        # clustering_result_dict["locally_linear_embedding_results"] = locally_linear_embedding_results
-        # clustering_result_dict["nmf_embedding_results"] = nmf_embedding_results
-        # clustering_result_dict["sparse_pca_embedding_results"] = sparse_pca_embedding_results
-        # clustering_result_dict["pca_embedding_results"] = pca_embedding_results
-        # clustering_result_dict["factor_analysis_embedding_results"] = factor_analysis_embedding_results
-        # clustering_result_dict["lda_embedding_results"] = lda_embedding_results
-        # clustering_result_dict["dictionary_learning_embedding_results"] = dictionary_learning_embedding_results
-        
+       
         clustering_result_dict = self.get_best_clustering_algorithm(clustering_result_dict) | clustering_result_dict 
-        # print(clustering_result_dict)
         
         subj_result_df_dict = {}
         for k, v in clustering_result_dict.items():
@@ -756,64 +633,18 @@ class CustomClustering:
         subj_result_df['img_id'] = img_id_list
         subj_result_df['best_clustering_labels'] = clustering_result_dict["best_clustering_labels"]
         subj_result_df['best_cluster_labels'] = clustering_result_dict["best_cluster_labels"]
-        # subj_result_df['best_clustering_algorithm'] = clustering_result_dict["best_clustering_algorithm"]
-        # subj_result_df['best_silhouette_score'] = clustering_result_dict["best_silhouette_score"]
-        # subj_result_df['worst_silhouette_score'] = clustering_result_dict["worst_silhouette_score"]
-        # subj_result_df['best_clustering_labels'] = clustering_result_dict["best_clustering_labels"]
-
         low_dimensional_embedding_df = [pd.DataFrame(v,
                                                      columns = [
                                                          f"{k.split('_embedding')[0].replace('_','').upper()}1",
                                                          f"{k.split('_embedding')[0].replace('_','').upper()}2",
                                                          ]) for k, v in low_dimensional_embedding_results.items()]
 
-        # tsne_df = pd.DataFrame(clustering_result_dict["tsne_embeddings_results"], columns=["TSNE1", "TSNE2"])
-        # isomap_df = pd.DataFrame(isomap_results, columns=["ISOMAP1", "ISOMAP2"])
-        # mds_df = pd.DataFrame(mds_embedding_results, columns=["MDS1", "MDS2"])
-        
+ 
         assert(all(subj_result_df.shape[0] == df.shape[0] for df in low_dimensional_embedding_df))
         # assert(mds_df.shape[0] == isomap_df.shape[0] == tsne_df.shape[0] == subj_result_df.shape[0])
         
         low_dimensional_embedding_df = pd.concat(low_dimensional_embedding_df, axis = 1)
         subj_result_df = pd.concat([subj_result_df, low_dimensional_embedding_df], axis=1)
-        # subj_result_df = pd.concat([subj_result_df, tsne_df, isomap_df, mds_df], axis=1)
-        
-        # subj_result_df["span_tree_connected_components_clusterings"] = clustering_result_dict["span_tree_connected_components_clusterings"]
-        # subj_result_df["connected_components_clusterings"] = clustering_result_dict["connected_components_clusterings"]
-        # subj_result_df["louvain_clusterings"] = clustering_result_dict["louvain_clusterings"]
-        # subj_result_df["hierarchical_clusterings"] = clustering_result_dict["hierarchical_clusterings"]
-        # subj_result_df["spectral_clustering_graph_based_clusterings"] = clustering_result_dict["spectral_clustering_graph_based_clusterings"]
-        # subj_result_df["kmeans_clusterings"] = clustering_result_dict["kmeans_clusterings"]
-        # subj_result_df["hdbscan_clusterings"] = clustering_result_dict["hdbscan_clusterings"]
-        # subj_result_df["affinity_propagation_clusterings"] = clustering_result_dict["affinity_propagation_clusterings"]
-        # subj_result_df["agglomerative_clusterings"] = clustering_result_dict["agglomerative_clusterings"]
-        # subj_result_df["spectral_embedding_based_clusterings"] = clustering_result_dict["spectral_embedding_based_clusterings"]
-        
-        # subj_result_df["span_tree_connected_components_n_clusters"] = [clustering_result_dict["span_tree_connected_components_n_clusters"]] * len(img_id_list)
-        # subj_result_df["span_tree_connected_components_best_silhouette_score"] = [clustering_result_dict["span_tree_connected_components_best_silhouette_score"]] * len(img_id_list)
-        # subj_result_df["connected_components_best_threshold"] = [clustering_result_dict["connected_components_best_threshold"]] * len(img_id_list)
-        # subj_result_df["connected_components_best_metric"] = [clustering_result_dict["connected_components_best_metric"]] * len(img_id_list)
-        # subj_result_df["connected_components_best_silhouette_score"] = [clustering_result_dict["connected_components_best_silhouette_score"]] * len(img_id_list)
-        # subj_result_df["louvain_best_silhouette_score"] = [clustering_result_dict["louvain_best_silhouette_score"]] * len(img_id_list)
-        # subj_result_df["hierarchical_best_metric"] = [clustering_result_dict["hierarchical_best_metric"]] * len(img_id_list)
-        # subj_result_df["hierarchical_best_linkage_type"] = [clustering_result_dict["hierarchical_best_linkage_type"]] * len(img_id_list)
-        # subj_result_df["hierarchical_best_silhouette_score"] = [clustering_result_dict["hierarchical_best_silhouette_score"]] * len(img_id_list)
-        # subj_result_df["spectral_clustering_graph_based_n_clusters"] = [clustering_result_dict["spectral_clustering_graph_based_n_clusters"]] * len(img_id_list)
-        # subj_result_df["spectral_clustering_graph_based_best_silhouette_score"] = [clustering_result_dict["spectral_clustering_graph_based_best_silhouette_score"]] * len(img_id_list)
-        # subj_result_df["kmeans_n_clusters"] = [clustering_result_dict["kmeans_n_clusters"]] * len(img_id_list)
-        # subj_result_df["kmeans_best_silhouette_score"] = [clustering_result_dict["kmeans_best_silhouette_score"]] * len(img_id_list)
-        # subj_result_df["hdbscan_best_silhouette_score"] = [clustering_result_dict["hdbscan_best_silhouette_score"]] * len(img_id_list)
-        # subj_result_df["hdbscan_best_cluster_selection_method"] = [clustering_result_dict["hdbscan_best_cluster_selection_method"]] * len(img_id_list)
-        # subj_result_df["affinity_propagation_best_silhouette_score"] = [clustering_result_dict["affinity_propagation_best_silhouette_score"]] * len(img_id_list)
-        # subj_result_df["agglomerative_best_n_clusters"] = [clustering_result_dict["agglomerative_best_n_clusters"]] * len(img_id_list)
-        # subj_result_df["agglomerative_best_silhouette_score"] = [clustering_result_dict["agglomerative_best_silhouette_score"]] * len(img_id_list)
-        # subj_result_df["spectral_embedding_based_best_affinity_method"] = [clustering_result_dict["spectral_embedding_based_best_affinity_method"]] * len(img_id_list)
-        # subj_result_df["spectral_embedding_based_best_n_clusters"] = [clustering_result_dict["spectral_embedding_based_best_n_clusters"]] * len(img_id_list)
-        # subj_result_df["spectral_embedding_based_best_silhouette_score"] = [clustering_result_dict["spectral_embedding_based_best_silhouette_score"]] * len(img_id_list)
-        
-        # subj_result_df["tsne_best_perplexity"] =  [clustering_result_dict["tsne_best_perplexity"]] * len(img_id_list)
-        # subj_result_df["tsne_best_kl_divergence"] = [clustering_result_dict["tsne_best_kl_divergence"]] * len(img_id_list)
-        
         clustering_result_dict["subj_result_df"] = subj_result_df
         if len(subj_result_df.columns) != len(set(subj_result_df.columns)):
             print(subj_result_df.columns)
@@ -1199,328 +1030,6 @@ class CustomClustering:
             "silhouette_scores": spectral_clustering_silhouette_scores,
         }
         
-    def get_span_tree_connected_components_clusterings2(self, adj_matrix: np.ndarray, img_embedding: np.ndarray, min_n_clusters: int, max_n_clusters: int):
-        if self.verbose:
-            print(inspect.currentframe().f_code.co_name)
-        best_cluster_labels = None
-        best_n_clusters = None
-        best_silhouette_score = -100
-        for i in range(min_n_clusters, max_n_clusters):
-            i = i + 1
-            clustering = SpanTreeConnectedComponentsClustering(
-                    n_clusters=i,
-                    metric="euclidean",
-                    n_jobs=-1,
-                )
-            
-            labels_pred = clustering.fit_predict(adj_matrix)
-            labels_pred_score = silhouette_score(img_embedding, labels_pred)
-            
-            if labels_pred_score > best_silhouette_score:
-                best_silhouette_score = labels_pred_score
-                best_n_clusters = i 
-                best_cluster_labels = labels_pred
-                
-            labels_pred = clustering.fit_predict(img_embedding)
-            labels_pred_score = silhouette_score(img_embedding, labels_pred)
-            
-            if labels_pred_score > best_silhouette_score:
-                best_silhouette_score = labels_pred_score
-                best_n_clusters = i 
-                best_cluster_labels = labels_pred
-            
-            
-        return {
-            "span_tree_best_n_clusters": best_n_clusters, 
-            "span_tree_best_cluster_labels": best_cluster_labels, 
-            "span_tree_best_silhouette_score": best_silhouette_score,
-            }
-        
-    def get_connected_components_clusterings2(self, adj_matrix: np.ndarray, img_embedding: np.ndarray, min_n_clusters: int, max_n_clusters: int, max_iter: int = 1000):
-        if self.verbose:
-            print(inspect.currentframe().f_code.co_name)
-        best_cluster_labels = None
-        best_threshold = None
-        best_metric = None
-        best_silhouette_score = -100
-        thresholds = np.linspace(0.15, 0.97, num = max_iter)
-        metrics = ["euclidean", "cosine"]
-        
-        clusterings = [ConnectedComponentsClustering(
-            threshold=threshold,
-            metric=metric,
-            n_jobs=-1,)
-                                 for threshold in thresholds 
-                                 for metric in metrics]
-        
-        for _, clustering in enumerate(clusterings):
-            labels_pred = clustering.fit_predict(adj_matrix)
-            
-            if min_n_clusters <= len(set(labels_pred)) <= max_n_clusters:
-                labels_pred_score = silhouette_score(img_embedding, labels_pred)
-                if labels_pred_score > best_silhouette_score:
-                    best_silhouette_score = labels_pred_score
-                    best_cluster_labels = labels_pred
-                    best_metric = clustering.metric
-                    best_threshold = clustering.threshold
-                
-            labels_pred = clustering.fit_predict(img_embedding)
-            
-            if min_n_clusters <= len(set(labels_pred)) <= max_n_clusters:
-                labels_pred_score = silhouette_score(img_embedding, labels_pred)
-                if labels_pred_score > best_silhouette_score:
-                    best_silhouette_score = labels_pred_score
-                    best_cluster_labels = labels_pred
-                    best_metric = clustering.metric
-                    best_threshold = clustering.threshold
-        
-        # for threshold in thresholds:
-        #     metric = "euclidean"
-        #     clustering = ConnectedComponentsClustering(
-        #         threshold=threshold,
-        #         metric=metric,
-        #         n_jobs=-1,
-        #     )
-            
-        #     labels_pred = clustering.fit_predict(adj_matrix)
-            
-        #     if min_n_clusters <=len(set(labels_pred)) <= max_n_clusters and labels_pred_score > best_silhouette_score:
-        #         labels_pred_score = silhouette_score(img_embedding, labels_pred)
-        #         best_silhouette_score = labels_pred_score
-        #         best_cluster_labels = labels_pred
-        #         best_metric = metric
-        #         best_threshold = threshold
-                
-        #     labels_pred = clustering.fit_predict(img_embedding)
-            
-        #     if min_n_clusters <=len(set(labels_pred)) <= max_n_clusters and labels_pred_score > best_silhouette_score:
-        #         labels_pred_score = silhouette_score(img_embedding, labels_pred)
-        #         best_silhouette_score = labels_pred_score
-        #         best_cluster_labels = labels_pred
-        #         best_metric = metric
-        #         best_threshold = threshold
-                
-        #     metric = "cosine"
-        #     clustering = ConnectedComponentsClustering(
-        #         threshold=threshold,
-        #         metric=metric,
-        #         n_jobs=-1,
-        #     )
-            
-        #     labels_pred = clustering.fit_predict(adj_matrix)
-            
-        #     if min_n_clusters <=len(set(labels_pred)) <= max_n_clusters and labels_pred_score > best_silhouette_score:
-        #         labels_pred_score = silhouette_score(img_embedding, labels_pred)
-        #         best_silhouette_score = labels_pred_score
-        #         best_cluster_labels = labels_pred
-        #         best_metric = metric
-        #         best_threshold = threshold
-                
-        #     labels_pred = clustering.fit_predict(img_embedding)
-            
-        #     if min_n_clusters <=len(set(labels_pred)) <= max_n_clusters and labels_pred_score > best_silhouette_score:
-        #         labels_pred_score = silhouette_score(img_embedding, labels_pred)
-        #         best_silhouette_score = labels_pred_score
-        #         best_cluster_labels = labels_pred
-        #         best_metric = metric
-        #         best_threshold = threshold
-            
-            
-        return {
-            "connected_components_best_threshold": best_threshold, 
-            "connected_components_best_cluster_labels": best_cluster_labels, 
-            "connected_components_best_silhouette_score": best_silhouette_score,
-            "connected_components_best_metric": best_metric,
-            }
-    
-    def get_louvain_clusterings2(self, adj_matrix: np.ndarray, img_embedding: np.ndarray, min_n_clusters: int, max_n_clusters: int):
-        communities, _ = louvain_method(adj_matrix=adj_matrix)
-        labels_pred = self.convert_communities_output_to_labels(communities)
-        
-        if min_n_clusters <=len(set(labels_pred)) <= max_n_clusters: 
-            best_silhouette_score = silhouette_score(img_embedding, labels_pred)
-        else:
-            best_silhouette_score = None 
-        
-        return {
-            "louvain_best_cluster_labels": labels_pred,
-            "louvain_best_silhouette_score": best_silhouette_score,
-        }
-        
-    def get_hierarchical_clusterings2(self, adj_matrix: np.ndarray, img_embedding: np.ndarray, min_n_clusters: int, max_n_clusters: int):
-        if self.verbose:
-            print(inspect.currentframe().f_code.co_name)
-        metrics = ['euclidean', 'cosine']
-        linkages = ['single', 'mean', 'complete']
-        best_silhouette_score = -100
-        best_linkage = None
-        best_metric = None
-        best_cluster_labels = None
-        for linkage in linkages:
-            for metric in metrics: 
-                communities = hierarchical_clustering(adj_matrix=adj_matrix, metric=metric, linkage=linkage)
-                labels_pred = self.convert_communities_output_to_labels(communities)
-                labels_pred_score = silhouette_score(img_embedding, labels_pred)
-                
-                if labels_pred_score > best_silhouette_score: 
-                    best_metric = metric
-                    best_linkage = linkage
-                    best_cluster_labels = labels_pred
-                else:
-                    best_silhouette_score = None 
-        
-        return {
-            "hierarchical_best_cluster_labels": best_cluster_labels,
-            "hierarchical_best_silhouette_score": best_silhouette_score,
-            "hierarchical_best_linkage": best_linkage,
-            "hierarchical_best_metric": best_metric,
-        }
-        
-    def get_k_means_clusterings2(self, img_embedding: np.ndarray, min_n_clusters: int, max_n_clusters: int, max_iter: int):
-        if self.verbose:
-            print(inspect.currentframe().f_code.co_name)
-        best_n_clusters = None
-        best_silhouette_score = -100
-        best_cluster_labels = None
-        for i in range(min_n_clusters, max_n_clusters): 
-            i = i + 1
-            labels_pred = KMeans(n_clusters=i,  max_iter=max_iter).fit_predict(img_embedding)
-            labels_pred_score = silhouette_score(img_embedding, labels_pred)
-            
-            if labels_pred_score > best_silhouette_score:
-                best_silhouette_score = labels_pred_score
-                best_cluster_labels = labels_pred
-                best_n_clusters = i
-
-        return {
-            "k_means_best_cluster_labels": best_cluster_labels,
-            "k_means_best_silhouette_score": best_silhouette_score,
-            "k_means_best_n_clusters": best_n_clusters,
-        }
-        
-    # def get_hdbscan_clusterings2(self, img_embedding: np.ndarray, min_n_clusters: int, max_n_clusters: int, max_iter: int):
-    #     if self.verbose:
-    #         print(inspect.currentframe().f_code.co_name)
-    #     best_silhouette_score = -100
-    #     best_cluster_labels = None
-    #     min_cluster_size = int(len(img_embedding)/ max_n_clusters)
-    #     min_cluster_size = max(min_cluster_size, 2)
-    #     max_cluster_size = int(len(img_embedding)/ min_n_clusters)
-    #     best_cluster_selection_method = None
-        
-    #     for cluster_selection_method in ["eom", "leaf"]:
-        
-    #         labels_pred = HDBSCAN(min_cluster_size=min_cluster_size,
-    #                                 max_cluster_size=max_cluster_size,
-    #                                 cluster_selection_method=cluster_selection_method,
-    #                                 n_jobs = -1).fit_predict(img_embedding)
-    #         try: 
-    #             labels_pred_score = silhouette_score(img_embedding, labels_pred)
-
-    #             if min_n_clusters <=len(set(labels_pred)) <= max_n_clusters and labels_pred_score > best_silhouette_score:
-    #                 best_silhouette_score = labels_pred_score
-    #                 best_cluster_labels = labels_pred
-    #                 best_cluster_selection_method = cluster_selection_method
-    #         except ValueError as e:
-    #             print(cluster_selection_method, e)
-
-    #     return {
-    #         "hdbscan_best_cluster_labels": best_cluster_labels,
-    #         "hdbscan_best_silhouette_score": best_silhouette_score,
-    #         "hdbscan_best_cluster_selection_method": best_cluster_selection_method,
-    #     }
-        
-    def get_affinity_propagation_clusterings2(self, img_embedding: np.ndarray, min_n_clusters: int, max_n_clusters: int, max_iter: int):
-        if self.verbose:
-            print(inspect.currentframe().f_code.co_name)
-        best_silhouette_score = -100
-        best_cluster_labels = None
-        
-        
-        labels_pred = AffinityPropagation( max_iter=max_iter).fit_predict(img_embedding)
-        try: 
-            labels_pred_score = silhouette_score(img_embedding, labels_pred)
-
-            if min_n_clusters <=len(set(labels_pred)) <= max_n_clusters:
-                best_silhouette_score = labels_pred_score
-                best_cluster_labels = labels_pred
-        except ValueError as e:
-                print("affinity proagation error: ",e)
-
-        return {
-            "affinity_propagation_best_cluster_labels": best_cluster_labels,
-            "affinity_propagation_best_silhouette_score": best_silhouette_score,
-        }
-        
-    def get_agglomerative_clusterings2(self, img_embedding: np.ndarray, min_n_clusters: int, max_n_clusters: int, max_iter: int):
-        if self.verbose:
-            print(inspect.currentframe().f_code.co_name)
-        best_silhouette_score = -100
-        best_cluster_labels = None
-        best_n_clusters = None
-        
-        for i in range(min_n_clusters, max_n_clusters):
-            i = i + 1
-        
-            labels_pred = AgglomerativeClustering(n_clusters=i,).fit_predict(img_embedding)
-            labels_pred_score = silhouette_score(img_embedding, labels_pred)
-
-            if labels_pred_score > best_silhouette_score:
-                best_silhouette_score = labels_pred_score
-                best_cluster_labels = labels_pred
-                best_n_clusters = i
-
-        return {
-            "agglomerative_best_cluster_labels": best_cluster_labels,
-            "agglomerative_best_silhouette_score": best_silhouette_score,
-            "agglomerative_best_n_clusters": best_n_clusters,
-        }
-        
-    def get_spectral_embedding_based_clusterings2(self, img_embedding: np.ndarray, min_n_clusters: int, max_n_clusters: int, max_iter: int):
-        if self.verbose:
-            print(inspect.currentframe().f_code.co_name)
-        best_silhouette_score = -100
-        best_cluster_labels = None
-        best_n_clusters = None
-        best_affinity_method = None
-        affinity_methods = ["nearest_neighbors", "rbf"]
-        
-        for i in range(min_n_clusters, max_n_clusters):
-            i = i + 1
-            
-            for affinity_method in affinity_methods:
-        
-                labels_pred = SpectralClustering(n_clusters=i,
-                                                n_jobs=-1,
-                                                affinity = affinity_method,
-                                                random_state=0).fit_predict(img_embedding)
-                labels_pred_score = silhouette_score(img_embedding, labels_pred)
-
-                if labels_pred_score > best_silhouette_score:
-                    best_silhouette_score = labels_pred_score
-                    best_cluster_labels = labels_pred
-                    best_n_clusters = i
-                    best_affinity_method = affinity_method
-
-        return {
-            "spectral_embedding_based_best_cluster_labels": best_cluster_labels,
-            "spectral_embedding_based_best_silhouette_score": best_silhouette_score,
-            "spectral_embedding_based_best_n_clusters": best_n_clusters,
-            "spectral_embedding_based_best_affinity_method": best_affinity_method,
-        }
-        
-    # def get_nca_embeddings(self, img_embedding: np.ndarray, max_iter: int):
-    #     try: 
-    #         result = NeighborhoodComponentsAnalysis(
-    #             n_components=2,
-    #             init = "pca",
-    #             max_iter = max_iter,
-    #             ).fit_transform(img_embedding)
-    #         return result
-    #     except Exception as e:
-    #         print(e)
-    #         return np.zeros((img_embedding.shape[0], 2))
-        
     def get_mds_embeddings(self, img_embedding: np.ndarray, max_iter: int):
         if self.verbose:
             print(inspect.currentframe().f_code.co_name)
@@ -1595,39 +1104,6 @@ class CustomClustering:
         if self.verbose:
             print(inspect.currentframe().f_code.co_name)
         return umap.UMAP(densmap=True).fit_transform(img_embedding)
-        
-    def get_tsne_embeddings2(self, img_embedding: np.ndarray, max_iter: int):
-        if self.verbose:
-            print(inspect.currentframe().f_code.co_name)
-            
-            
-        min_perplexity = min(5, img_embedding.shape[0])
-        max_perplexity = min(50, img_embedding.shape[0])
-        best_tsne_results = None
-        best_perplexity = None
-        best_kl_divergence = 1000
-        
-        for perplexity in range(min_perplexity, max_perplexity):
-        
-            _tsne = TSNE(
-                n_components=2,
-                n_jobs = -1,
-                learning_rate = 'auto',
-                init='pca',
-                n_iter_without_progress=500,
-                perplexity=perplexity,
-            )
-            tsne_results = _tsne.fit_transform(img_embedding)
-            if _tsne.kl_divergence_ < best_kl_divergence:
-                best_kl_divergence = _tsne.kl_divergence_
-                best_perplexity = perplexity
-                best_tsne_results = tsne_results
-        
-        return {
-            "best_tsne_results": best_tsne_results, 
-            "best_perplexity": best_perplexity, 
-            "best_kl_divergence": best_kl_divergence,
-            }
         
     def get_tsne_embeddings(self, img_embedding: np.ndarray, max_iter: int, cuda_tsne = False, sklearn_tsne_bool = True):
         if self.verbose:
@@ -1798,59 +1274,7 @@ class CustomClustering:
             "worst_silhouette_score": worst_silhouette_score,
             "best_clustering_labels": best_clustering_labels,
             "best_cluster_labels": best_clustering_labels,
-        }
-    
-    def get_best_clustering_algorithm2(self, clustering_result_dict: dict):
-        all_silhouette_scores = [
-            clustering_result_dict.get("span_tree_connected_components_best_silhouette_score"), 
-            clustering_result_dict.get("connected_components_best_silhouette_score"), 
-            clustering_result_dict.get("louvain_best_silhouette_score"), 
-            clustering_result_dict.get("hierarchical_best_silhouette_score"), 
-            clustering_result_dict.get("spectral_clustering_graph_based_best_silhouette_score"), 
-            clustering_result_dict.get("kmeans_best_silhouette_score"), 
-            # clustering_result_dict.get("hdbscan_best_silhouette_score"), 
-            clustering_result_dict.get("affinity_propagation_best_silhouette_score"), 
-            clustering_result_dict.get("agglomerative_best_silhouette_score"), 
-            clustering_result_dict.get("spectral_embedding_based_best_silhouette_score"), 
-        ]
-        all_clustering_algos = [
-            "span_tree_connected_components",
-            "connected_components",
-            "louvain",
-            "hierarchical",
-            "spectral_clustering_graph_based",
-            "kmeans",
-            # "hdbscan",
-            "affinity_propagation",
-            "agglomerative",
-            "spectral_embedding_based",
-        ]
-        
-        assert(len(all_clustering_algos) == len(all_silhouette_scores))
-        
-        clustering_algo_dict = {all_clustering_algos[i]: all_silhouette_scores[i]
-                                for i in range(len(all_clustering_algos))}
-
-        clustering_algo_dict = {key: val for key, val in clustering_algo_dict.items() 
-                                if val is not None and isinstance(val, (int, float, np.floating, np.integer)) }
-        
-        best_clustering_algorithm = max(clustering_algo_dict, key=clustering_algo_dict.get)
-        best_silhouette_score = clustering_algo_dict.get(best_clustering_algorithm)
-        print(f"Best clustering algorithm {best_clustering_algorithm}, best silhouette score {best_silhouette_score}")
-        best_clustering_labels = clustering_result_dict.get(f"{best_clustering_algorithm}_clusterings")
-        print(f"{best_clustering_algorithm}_clusterings", best_clustering_labels, )
-        
-        worst_clustering_algorithm = min(clustering_algo_dict, key=clustering_algo_dict.get)
-        worst_silhouette_score = clustering_algo_dict.get(worst_clustering_algorithm)
-        
-        return {
-            "best_clustering_algorithm": best_clustering_algorithm,
-            "best_silhouette_score": best_silhouette_score,
-            "worst_clustering_algorithm": worst_clustering_algorithm,
-            "worst_silhouette_score": worst_silhouette_score,
-            "best_clustering_labels": best_clustering_labels,
-        }
-        
+        }      
     def combine_pre_computed_low_dimensional_embeddings(self, clustering_result_dict: dict):
         pass
         
@@ -1905,26 +1329,6 @@ class CustomClustering:
                 clustering_result_save_ver_dict[k] = v.cpu().detach().numpy().tolist()
             elif isinstance(v, (list, tuple, set)):
                 clustering_result_save_ver_dict[k] = self._convert_iterable(v)
-                # for indx, iterable_val in enumerate(v):
-                #     if isinstance(iterable_val, pd.DataFrame):
-                #         clustering_result_save_ver_dict[k][indx] = sub_v.to_dict(orient="records")
-                #     elif isinstance(iterable_val, np.ndarray):
-                #         clustering_result_save_ver_dict[k][indx] = sub_v.tolist() 
-                #     elif isinstance(v, dict):
-                #         clustering_result_save_ver_dict[k][indx] = self._convert_dict(v)
-                #     elif isinstance(iterable_val, (np.integer)):
-                #         clustering_result_save_ver_dict[k][indx] = int(iterable_val)
-                #     elif isinstance(iterable_val, (np.floating)):
-                #         clustering_result_save_ver_dict[k][indx] = float(iterable_val)
-                #     elif isinstance(iterable_val, (list, tuple)):
-                #         if len(iterable_val) == 0: continue
-                #         if isinstance(iterable_val[0], dict):
-                #             clustering_result_save_ver_dict[k][indx] = [self._convert_dict(d) for d in iterable_val]
-                #         if not isinstance(iterable_val[0], (str, float, int)):
-                #             pass
-                #         clustering_result_save_ver_dict[k][indx] = float(iterable_val)
-                #     elif not isinstance(iterable_val, (str, float, int, list, set, tuple)):
-                #         print(f"Removed {k} because it contained an invalid type {type(iterable_val)}")
             elif isinstance(v, (np.floating)):
                 clustering_result_save_ver_dict[k] = float(v) 
             elif isinstance(v, np.integer):
@@ -2088,62 +1492,7 @@ class CustomClustering:
             plt.show()
             plt.clf()
         
-        # for projection_suffix, projection_result in clustering_result_dict["low_dimensional_embedding_results"].items():
-        #     projection_suffix = projection_suffix.split('_embedding')[0].replace('_','').upper()
-        #     if not isinstance(projection_result, (np.ndarray, list, pd.DataFrame)):
-        #         continue
-        #     fig, ax = plt.subplots(figsize=(8,6)) # Set figsize
-        #     sns.set_style(None, {"grid.color": ".6", "grid.linestyle": ":"})
-        #     sns.scatterplot(data=result_df, x=f'{projection_suffix}1', y=f'{projection_suffix}2', hue='best_cluster_labels', palette='hls')
-        #     sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
-        #     plt.title(f'Scatter plot of images using {projection_suffix}');
-        #     plt.xlabel(f'{projection_suffix}1');
-        #     plt.ylabel(f'{projection_suffix}2');
-        #     plt.axis('equal')
-        #     plt.tight_layout()
-        #     plt.savefig(os.path.join(result_dir,f"{projection_suffix}_best_clustering_results_no_img_label.png"), bbox_inches='tight')
-        #     plt.show()
-        #     plt.clf()
-            
-        #     fig, ax = plt.subplots(figsize=(8,6)) # Set figsize
-        #     sns.set_style(None, {"grid.color": ".6", "grid.linestyle": ":"})
-        #     sns.scatterplot(data=result_df, x=f'{projection_suffix}1', y=f'{projection_suffix}2', hue='best_cluster_labels', palette='hls')
-        #     self._label_point(result_df[f'{projection_suffix}1'], result_df[f'{projection_suffix}2'], result_df["img_id"], ax)
-        #     sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
-        #     plt.title(f'Scatter plot of images using {projection_suffix}');
-        #     plt.xlabel(f'{projection_suffix}1');
-        #     plt.ylabel(f'{projection_suffix}2');
-        #     plt.axis('equal')
-        #     plt.tight_layout()
-        #     plt.savefig(os.path.join(result_dir,f"{projection_suffix}_best_clustering_results.png"), bbox_inches='tight')
-        #     plt.show()
-        #     plt.clf()
-        
-        # for projection_suffix in ["ISOMAP", "MDS", "TSNE"]:
-        #     fig, ax = plt.subplots(figsize=(8,6)) # Set figsize
-        #     sns.set_style('darkgrid', {"grid.color": ".6", "grid.linestyle": ":"})
-        #     sns.scatterplot(data=result_df, x=f'{projection_suffix}1', y=f'{projection_suffix}2', hue='best_clustering_labels', palette='hls')
-        #     sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
-        #     plt.title(f'Scatter plot of images using {projection_suffix}');
-        #     plt.xlabel(f'{projection_suffix}1');
-        #     plt.ylabel(f'{projection_suffix}2');
-        #     plt.axis('equal')
-        #     plt.savefig(os.path.join(result_dir,f"{projection_suffix}_best_clustering_results_no_img_label.png"), bbox_inches='tight')
-        #     plt.show()
-        #     plt.clf()
-            
-        #     fig, ax = plt.subplots(figsize=(8,6)) # Set figsize
-        #     sns.set_style('darkgrid', {"grid.color": ".6", "grid.linestyle": ":"})
-        #     sns.scatterplot(data=result_df, x=f'{projection_suffix}1', y=f'{projection_suffix}2', hue='best_clustering_labels', palette='hls')
-        #     self._label_point(result_df[f'{projection_suffix}1'], result_df[f'{projection_suffix}2'], result_df["img_id"], ax)
-        #     sns.move_legend(ax, "upper left", bbox_to_anchor=(1, 1))
-        #     plt.title(f'Scatter plot of images using {projection_suffix}');
-        #     plt.xlabel(f'{projection_suffix}1');
-        #     plt.ylabel(f'{projection_suffix}2');
-        #     plt.axis('equal')
-        #     plt.savefig(os.path.join(result_dir,f"{projection_suffix}_best_clustering_results.png"), bbox_inches='tight')
-        #     plt.show()
-        #     plt.clf()
+
         try:  
             communities = self.convert_sklearn_labels_to_communities(result_df["best_cluster_labels"])
         except IndexError as e:
@@ -2316,40 +1665,7 @@ class CustomClustering:
             subj_best_results_df.drop_duplicates(inplace = True)
             all_subj_best_results_df[indx] = subj_best_results_df
             
-            # try:
-            #     clustering_result_dict = self.try_all_clustering_methods(subj_data)
-            #     self.save_clustering_results(clustering_result_dict, result_dir)
-            # except KeyboardInterrupt as e:
-            #     all_subj_best_results_df = [i for i in all_subj_best_results_df if i is not None and isinstance(i, pd.DataFrame) and not i.empty]
-            #     all_subj_best_results_df = pd.concat(all_subj_best_results_df)
-            #     self.all_subj_best_results_df = all_subj_best_results_df
-            #     all_subj_best_results_df.to_csv(os.path.join(result_dir, "all_subj_best_results.csv"), index=None)
-            #     print(e)
-            #     sys.exit(1)
-            # except Exception as e:
-            #     all_subj_best_results_df[indx] = pd.DataFrame()
-            #     print(f"Error occurred while processing MI_ID: {mi_id}")
-            #     print(e)
-            # else:
-            #     subj_best_results_df = clustering_result_dict["subj_result_df"].copy()
-            #     subj_best_results_df = subj_best_results_df[["mi_id", "max_n_clusters",
-            #                                                  "min_n_clusters", "best_clustering_algorithm",
-            #                                                  "best_silhouette_score", "worst_clustering_algorithm",
-            #                                                  "worst_silhouette_score", "img_id_list",
-            #                                                  ]]
-            #     subj_best_results_df.drop_duplicates(inplace = True)
-                
-                # subj_best_results_df["mi_id"] = clustering_result_dict["mi_id"]
-                # subj_best_results_df["max_n_clusters"] = clustering_result_dict["max_n_clusters"]
-                # subj_best_results_df["min_n_clusters"] = clustering_result_dict["min_n_clusters"]
-                # subj_best_results_df["best_clustering_algorithm"] = clustering_result_dict["best_clustering_algorithm"]
-                # subj_best_results_df["best_silhouette_score"] = clustering_result_dict["best_silhouette_score"]
-                # subj_best_results_df["worst_clustering_algorithm"] = clustering_result_dict["worst_clustering_algorithm"]
-                # subj_best_results_df["worst_silhouette_score"] = clustering_result_dict["worst_silhouette_score"]
-                
-                # all_subj_best_results_df[indx] = subj_best_results_df
-                
-        # all_subj_best_results_df = [i for i in all_subj_best_results_df if i is not None and isinstance(i, pd.DataFrame) and not i.empty]
+           
         all_subj_best_results_df = pd.concat(all_subj_best_results_df, axis = 0 )
         self.all_subj_best_results_df = all_subj_best_results_df
         all_subj_best_results_df.to_csv(os.path.join(result_dir, "all_subj_best_results.csv"), index=None)
