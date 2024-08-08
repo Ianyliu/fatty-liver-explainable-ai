@@ -447,6 +447,8 @@ class ElasticNetClassifierWithStats:
         self.n_splits = n_splits
         _, counts = np.unique(y, return_counts=True)
         self.n_splits = min(self.n_splits, np.min(counts))
+        if self.n_splits < 10: 
+            self.n_splits -= 1
         self.X, self.y = X, y
         self._model = LogisticRegressionCV(Cs=self.n_Cs,
                                            fit_intercept=True,
@@ -787,7 +789,7 @@ class RidgeClassifierWithStats:
     _y_indices_1: np.ndarray = field(init=False, default=None)
     feature_names_in_: Union[list, tuple, np.ndarray] = field(init=False)
     summary_df: pd.DataFrame = field(init=False, default=None)
-    n_splits: int = 10
+    n_splits: int = field(init=False, default=10)
     
     def __post_init__(self):
         self.alphas = np.linspace(0.01, 1.0, num = self.n_alphas)
@@ -797,6 +799,8 @@ class RidgeClassifierWithStats:
         self.n_splits = n_splits
         _, counts = np.unique(y, return_counts=True)
         self.n_splits = min(self.n_splits, np.min(counts))
+        if self.n_splits < 10: 
+            self.n_splits -= 1
         self.X = X
         self.y = y
         self._y_indices_0 = np.where(y == 0)[0]
