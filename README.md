@@ -29,9 +29,9 @@ Fig (b): Ridge coefficients of each image, indicating conditional influence of e
 
 # What Makes Our Study Different
 - Traditional LIME is only applicable on single input (ex. single image). We **extend LIME to graph neural networks (GNN)** by applying principles of LIME on nodes and edges of a graph neural network.
-  - Instead of randomly perturbing "superpixels" (segmentations) and creating variations of the original image, we use graph sampling to create variations of the graph and create local models from the subgraphs. 
+  - Instead of randomly perturbing "superpixels" (segmentations) and creating variations of the original image, we use _graph sampling_ to create variations of the graph and create local models from the subgraphs. 
   - This allows us to derive **image-level importance** and **influence** for each subject.
-- LIME uses traditional local regression/classification, so it can only display _conditional relationships_. For example, typical regression interpretation of coefficients is: "given other variables do not change, so and so variable has such impact." We display **_marginal_****** relationships by calculating correlation. 
+- LIME uses traditional local regression/classification, so it can only display _conditional relationships_. For example, typical regression interpretation of coefficients is: "given other variables do not change, so and so variable has such impact." We display **_marginal_** relationships by calculating correlation. 
 - Our approach makes use of summary statisics such as confidence interval and standard errors, which allows for _uncertainty quantification_.
 - We employ a novel _two-stage adaptive class-balanced sampling_ method to encourage class balanced samples. 
 
