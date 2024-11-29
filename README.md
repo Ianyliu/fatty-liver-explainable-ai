@@ -25,7 +25,7 @@ Fig (b): ElasticNet coefficients of each image, indicating conditional influence
 <p align="center">
 <img width="782" alt="image" src="https://github.com/user-attachments/assets/da72f591-0afe-40a2-96b2-78e8bcc3edbc">
 <br>
-Fig (b): Ridge coefficients of each image, indicating conditional influence of each image.  Faded bars indicate statistical insignificance. </p>
+Fig (c): Ridge coefficients of each image, indicating conditional influence of each image.  Faded bars indicate statistical insignificance. </p>
 
 # What Makes Our Study Different
 - Traditional LIME is only applicable on single input (ex. single image). We **extend LIME to graph neural networks (GNN)** by applying principles of LIME on nodes and edges of a graph neural network.
