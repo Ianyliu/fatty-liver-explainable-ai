@@ -33,7 +33,39 @@ Fig (b): Ridge coefficients of each image, indicating conditional influence of e
   - This allows us to derive **image-level importance** and **influence** for each subject.
 - LIME uses traditional local regression/classification, so it can only display _conditional relationships_. For example, typical regression interpretation of coefficients is: "given other variables do not change, so and so variable has such impact." We display **_marginal_** relationships by calculating correlation. 
 - Our approach makes use of summary statisics such as confidence interval and standard errors, which allows for _uncertainty quantification_.
-- We employ a novel _two-stage adaptive class-balanced sampling_ method to encourage class balanced samples. 
+- We employ a novel _two-stage adaptive class-balanced sampling_ method to encourage class balanced samples.
+
+# Order of Running the Pipeline
+1. `generate_samples_and_marginal_relations.py` (which imports from `marginal_relation.py`)
+2. `ridge_run.py` OR/AND `elastic_net_run.py` (which both import from `classifiers.py`)
+3. `organize_output.py`
+
+# Explanation of Each Step
+1. Generate samples to create explanations on. The sampling algorithm tries to create class-balanced samples. Then, the correlation is calculated for each image with the model's predictions.
+2. Ridge/Elastic-Net logistic regression to identify important coefficients.
+3. Organize output into a folder structure as such: 
+- organized_output_folder\
+  - correlations
+    - positive
+    - negative
+    - neutral 
+  - csv
+    - 0-elastic_net_coefficients.csv
+    - 1-ridge_coefficients.csv
+    - 2-correlations.csv 
+  - ridge
+    - positive
+    - negative
+    - neutral 
+  - elastic
+    - positive
+    - negative
+    - neutral 
+  - plots
+    - 0-vbar.png
+    - 1-hbar.png 
+
+Here, each `positive` folder contains original images that  contribute to model predicting the positive class, while the `negative` folder contains original images that contribute to model predicting the negative class. `neutral` folder contains non-significant images. `plots` contain all bar plots, while `csv` contains the coefficients for each image. 
 
 [^1]: Department of Data Science, Fei Tian College Middletown, Middletown NY
 [^2]: Department of Biostatistics, Brown University, Providence RI
