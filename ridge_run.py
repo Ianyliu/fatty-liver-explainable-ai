@@ -18,6 +18,35 @@ load_dotenv()
 
 @dataclass
 class RidgeRun:
+    """
+    A class to perform Ridge Regression analysis on image data.
+
+    Attributes:
+    -----------
+    crop_image_dir : str
+        Directory path where cropped images are stored.
+    test_data_id : str
+        Identifier for the test data.
+    metadata_name : str
+        Path to the metadata CSV file.
+    result_dir : str
+        Directory path where results will be saved.
+    all_subj_save_dir : str
+        Directory path where all subject results will be saved.
+    n_bootstrap_iterations : int
+        Number of bootstrap iterations for the Ridge regression.
+
+    Methods:
+    --------
+    __post_init__():
+        Initializes additional attributes and creates necessary directories.
+    get_selected_mi_ids():
+        Retrieves selected MI IDs based on certain criteria.
+    select_unique_columns(df: pd.DataFrame) -> pd.DataFrame:
+        Selects unique columns from a DataFrame.
+    run():
+        Executes the Ridge regression analysis and saves the results.
+    """
     crop_image_dir: str = field(default_factory=lambda: os.getenv('CROP_IMAGE_DIR_PATH'))
     test_data_id: str = '09'
     metadata_name: str = 'meta_data/TWB_ABD_expand_modified_gasex_21072022.csv'
@@ -37,17 +66,58 @@ class RidgeRun:
         self.selected_mi_ids = self.get_selected_mi_ids()
 
     def get_selected_mi_ids(self):
+        """
+        Get the set of selected MI_IDs based on specific criteria.
+
+        This method filters the MI_IDs from the test data list based on the following criteria:
+        1. The 'liver_fatty' value in the meta data for the MI_ID is greater than 0.
+        2. The length of the 'IMG_ID_LIST' in the meta data for the MI_ID is greater than or equal to 20.
+
+        Returns:
+            set: A set of MI_IDs that meet the specified criteria.
+        """
         ground_truth_pos_mi_ids = [mi_id for mi_id in self.test_data_list['MI_ID'] if self.meta_data[self.meta_data['MI_ID'] == mi_id]['liver_fatty'].to_list()[0] > 0]
         selected_mi_ids = [mi_id for mi_id in ground_truth_pos_mi_ids if len(ast.literal_eval(self.meta_data[self.meta_data['MI_ID'] == mi_id]['IMG_ID_LIST'].to_list()[0])) >= 20]
         return set(selected_mi_ids)
 
     @staticmethod
     def select_unique_columns(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Select unique columns from a DataFrame.
+
+        This function transposes the input DataFrame, removes duplicate rows (which correspond to duplicate columns in the original DataFrame), and then transposes it back to return a DataFrame with unique columns.
+
+        Parameters:
+        df (pd.DataFrame): The input DataFrame from which to select unique columns.
+
+        Returns:
+        pd.DataFrame: A DataFrame containing only unique columns from the input DataFrame.
+        """
         df_t = df.T
         df_unique = df_t.drop_duplicates()
         return df_unique.T
 
     def run(self):
+        """
+        Executes the ridge regression analysis on prediction results.
+
+        This method performs the following steps:
+        1. Identifies CSV files containing prediction results.
+        2. Filters out subjects that have already been processed.
+        3. Reads and processes the prediction results for each subject.
+        4. For each subject, if the predictions are not all the same, it fits a Ridge Classifier model.
+        5. Saves the model summary and plots the results.
+
+        Raises:
+            KeyboardInterrupt: If the process is interrupted by the user.
+            Exception: If there is an issue with fitting the Ridge Classifier model.
+
+        Prints:
+            - The directory where results will be saved.
+            - Skips subjects with uniform predictions.
+            - Skips subjects if there are issues with the Ridge Classifier model.
+            - The final directory where all results are saved.
+        """
         if self.result_dir.endswith("/"):
             csv_paths = glob.glob(self.result_dir + "*/pred_results.csv")
         else:
