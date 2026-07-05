@@ -257,7 +257,7 @@ Typical per-subject outputs include:
 
 If you use or adapt this repository, please cite or acknowledge the project as:
 
-Ian Liu. (2025). Ianyliu/fatty-liver-explainable-ai: First Version (0.0.0). Zenodo. https://doi.org/10.5281/zenodo.14601896
+Ian Liu, Tso-Jung Yen. (2025). Ianyliu/fatty-liver-explainable-ai: First Version (0.0.0). Zenodo. https://doi.org/10.5281/zenodo.14601896
 
 ---
 
