@@ -6,10 +6,14 @@
 Research code for explaining subject-level fatty liver predictions made from multiple abdominal ultrasound images using graph-based image aggregation, perturbation sampling, marginal association analysis, and regularized surrogate models.
 </p>
 
-<p align="center">
-  <em>By Ian Liu 劉以恆</em><br>
+<!-- <p align="center">
+  <em>By Ian Liu 劉以恆 [^1] [^2] [^3]</em><br>
   <em>Project mentor/advisor: Tso-Jung Yen 顏佐榕, PhD</em>
-</p>
+</p> -->
+
+###### By: Ian Liu 劉以恆[^1] [^2] [^3]
+
+###### Project Mentor/Advisor: Tso-Jung Yen 顏佐榕, PhD[^3]
 
 ---
 
@@ -257,9 +261,7 @@ If you use or adapt this repository, please cite or acknowledge the project as:
 
 ---
 
-## Author
 
-Ian Liu 劉以恆  
-Department of Data Science, Fei Tian College Middletown  
-Department of Biostatistics, Brown University  
-Institute of Statistical Science, Academia Sinica, Taiwan
+[^1]: Department of Data Science, Fei Tian College Middletown, Middletown NY
+[^2]: Department of Biostatistics, Brown University, Providence RI
+[^3]: Institute of Statistical Science, Academia Sinica, Taiwan
