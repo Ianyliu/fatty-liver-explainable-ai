@@ -224,9 +224,8 @@ def encoder_model(name, input_dim, num_layers, num_classes, device):
 
 def image_encoder_model(name, pretrained, num_classes, device):
     
-    encoder=None
-    
-    if name=="resnet50":
+    encoder = None
+    pretrained_encoder = None
         
         if pretrained==True:
             
