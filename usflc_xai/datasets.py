@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 import ast
-import torch_geometric.utils.subgraph as subgraph
+from torch_geometric.utils import subgraph
 from torch_geometric.data import Dataset, Data
 from numpy.random import choice
 from PIL import Image
