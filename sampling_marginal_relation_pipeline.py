@@ -106,7 +106,7 @@ class LIME_subj_pipeline:
         self.bootstrap_sample = []
         self.img_list = sorted(self.img_list)
         self.all_img_abs_filepaths = sorted(self.all_img_abs_filepaths)
-        self.img_to_indx = dict(enumerate(self.img_list))
+        self.img_to_indx = {img: idx for idx, img in enumerate(self.img_list)}
         self.indx_to_img = dict(enumerate(self.img_list))
         self.indx_to_abs_filepath = dict(enumerate(self.all_img_abs_filepaths))
         self.result_dir = os.path.join(self.result_parent_dir, self.mi_id)
