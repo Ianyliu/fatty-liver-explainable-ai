@@ -233,12 +233,8 @@ class LIME_subj_pipeline:
         if max_sample_size_none_bool and not isinstance(max_sample_size, int):
             raise TypeError(f"max_sample_size must be type integer but is instead type {type(max_sample_size)}")
 
-        if min_sample_prop_none_bool and (min_sample_prop < 0.0 or min_sample_prop > 1.0):
-            raise ValueError(f"Minimum sample proportion {min_sample_prop} must be between 0.0 and 1.0")
-        
-        if min_sample_prop_none_bool and (max_sample_prop < 0.0 or max_sample_prop > 1.0):
+        if max_sample_prop_none_bool and (max_sample_prop < 0.0 or max_sample_prop > 1.0):
             raise ValueError(f"Maximum sample proportion {max_sample_prop} must be between 0.0 and 1.0")
-        
         if  min_sample_size_none_bool and (min_sample_size < 0 or min_sample_size > num_imgs):
             raise ValueError(f"Minimum sample size {min_sample_size} must be between 0 and {num_imgs}")
 
