@@ -2,10 +2,11 @@ import numpy as np
 import pandas as pd
 import torch
 import ast
-import torch_geometric.utils.subgraph as subgraph
+from torch_geometric.utils import subgraph
 from torch_geometric.data import Dataset, Data
 from numpy.random import choice
-import training.forward_backward_prop as forward_backward_prop
+
+from .training import forward_backward_prop
 
 def conformal_score_calculation(num_classes, 
                                 encoder, 
