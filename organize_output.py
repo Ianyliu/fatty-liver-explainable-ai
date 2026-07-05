@@ -101,8 +101,8 @@ class OutputOrganizer:
         negative_df = negative_df.sort_values([coef_col], ascending=[True])
         positive_ranked_img = positive_df["IMG"]
         negative_ranked_img = negative_df["IMG"]
-        positive_output_img = positive_df["IMG"] + "_" + positive_df[coef_col].round(2).astype(str)
-        negative_output_img = negative_df["IMG"] + "_" + negative_df[coef_col].round(2).astype(str)
+        positive_output_img = positive_df["IMG"].astype(str) + "_" + positive_df[coef_col].round(2).astype(str)
+        negative_output_img = negative_df["IMG"].astype(str) + "_" + negative_df[coef_col].round(2).astype(str)
         positive_img_paths = [os.path.join(self.crop_image_dir, f"{mi_id}_{img_id}.jpg") for img_id in positive_ranked_img]
         negative_img_paths = [os.path.join(self.crop_image_dir, f"{mi_id}_{img_id}.jpg") for img_id in negative_ranked_img]
         neutral_img_paths = [os.path.join(self.crop_image_dir, f"{mi_id}_{img_id}.jpg") for img_id in insignificant_df["IMG"]]
