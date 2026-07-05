@@ -41,15 +41,9 @@ class OutputOrganizer:
         for result_dir in self.result_dirs:
             completed_subj = [f.name for f in os.scandir(result_dir) if f.is_dir()]
             for mi_id in completed_subj:
+                if mi_id not in self.result_dict:
+                    continue
                 glob_path = os.path.join(result_dir, mi_id)
-                if glob_path[-1] != '/':
-                    glob_path = glob_path + "/"
-                mi_id_csvs = glob.glob(glob_path + "*.csv")
-                if len(mi_id_csvs) != 0:
-                    self.result_dict[mi_id]["csv_paths"] += mi_id_csvs
-                mi_id_img = glob.glob(glob_path + "*.png")
-                if len(mi_id_img) != 0:
-                    self.result_dict[mi_id]["plot_paths"] += mi_id_img
 
     def save_results(self):
         for mi_id, v in self.result_dict.items():
