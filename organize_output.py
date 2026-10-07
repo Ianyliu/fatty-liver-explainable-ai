@@ -1,3 +1,5 @@
+import project_paths as paths
+
 import os
 import pandas as pd
 import ast
@@ -136,15 +138,15 @@ class OutputOrganizer:
         print(f"All results saved to {self.save_dir}")
 
 if __name__ == "__main__":
-    CROP_IMAGE_DIR = os.getenv('CROP_IMAGE_DIR_PATH')
+    CROP_IMAGE_DIR = paths.image_dir()
     test_data_id = '09'
-    metadata_name = 'meta_data/TWB_ABD_expand_modified_gasex_21072022.csv'
-    test_data_list_name = f'fattyliver_2_class_certained_0_123_4_20_40_dataset_lists/dataset{test_data_id}/test_dataset{test_data_id}.csv'
+    metadata_name = paths.metadata_path()
+    test_data_list_name = paths.split_path(test_data_id)
     result_dirs = [
-        "/home/liuusa_tw/twbabd_image_xai_20062024/custom_lime_results/elastic-net-old-dataset-08-01-2024-06-59-39",
-        "/home/liuusa_tw/twbabd_image_xai_20062024/custom_lime_results/ridge-08-06-2024-01-24-40",
-        "/home/liuusa_tw/twbabd_image_xai_20062024/custom_lime_results/correlation-old-dataset-08-01-2024-03-37-02"
+        paths.configured_path("XAI_ELASTIC_OUTPUT", "outputs/original/elastic-net-old-dataset-08-01-2024-06-59-39"),
+        paths.configured_path("XAI_RIDGE_OUTPUT", "outputs/original/ridge-08-06-2024-01-24-40"),
+        paths.configured_path("XAI_CORRELATION_OUTPUT", "outputs/original/correlation-old-dataset-08-01-2024-03-37-02")
     ]
-    save_dir = "/home/liuusa_tw/twbabd_image_xai_20062024/custom_lime_results/organized_output"
+    save_dir = paths.configured_path("XAI_ORGANIZED_OUTPUT", "outputs/organized_output")
     organizer = OutputOrganizer(CROP_IMAGE_DIR, test_data_id, metadata_name, test_data_list_name, result_dirs, save_dir)
     organizer.run()

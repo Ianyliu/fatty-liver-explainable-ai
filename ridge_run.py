@@ -1,3 +1,5 @@
+import project_paths as paths
+
 import ast
 import datetime
 import glob
@@ -47,20 +49,20 @@ class RidgeRun:
     run():
         Executes the Ridge regression analysis and saves the results.
     """
-    crop_image_dir: str = field(default_factory=lambda: os.getenv('CROP_IMAGE_DIR_PATH'))
+    crop_image_dir: str = field(default_factory=lambda: paths.image_dir())
     test_data_id: str = '09'
-    metadata_name: str = 'meta_data/TWB_ABD_expand_modified_gasex_21072022.csv'
-    result_dir: str = "/home/liuusa_tw/twbabd_image_xai_20062024/custom_lime_results/07-12-2024-03-57-58/"
+    metadata_name: str = paths.metadata_path()
+    result_dir: str = paths.prediction_root()
     all_subj_save_dir: str = field(init=False)
     n_bootstrap_iterations: int = 50000
 
     def __post_init__(self):
         current_timestamp = datetime.datetime.now().strftime('%m-%d-%Y-%H-%M-%S')
-        self.all_subj_save_dir = os.path.join("/home/liuusa_tw/twbabd_image_xai_20062024/custom_lime_results", f"ridge-{current_timestamp}")
-        # self.all_subj_save_dir = "/home/liuusa_tw/twbabd_image_xai_20062024/custom_lime_results/ridge-08-06-2024-01-24-40"
+        self.all_subj_save_dir = paths.configured_path("XAI_RIDGE_OUTPUT", os.path.join(paths.output_root(), f"ridge-{current_timestamp}"))
+        # self.all_subj_save_dir = paths.configured_path("XAI_RIDGE_OUTPUT", "outputs/original/ridge-08-06-2024-01-24-40")
         if not os.path.exists(self.all_subj_save_dir):
             os.mkdir(self.all_subj_save_dir)
-        self.test_data_list_name = f'fattyliver_2_class_certained_0_123_4_20_40_dataset_lists/dataset{self.test_data_id}/test_dataset{self.test_data_id}.csv'
+        self.test_data_list_name = paths.split_path(self.test_data_id)
         self.test_data_list = pd.read_csv(self.test_data_list_name)
         self.meta_data = pd.read_csv(self.metadata_name, sep=",")
         self.selected_mi_ids = self.get_selected_mi_ids()

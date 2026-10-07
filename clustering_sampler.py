@@ -1,3 +1,5 @@
+import project_paths as paths
+
 import ast
 import datetime
 import gc
@@ -48,7 +50,7 @@ class Sampler:
     result_dir: str = field(init=False, default=None)
     samples_per_subj: int = 10000
     batch_size: int = 10
-    clustering_result_dir: str = "/home/liuusa_tw/twbabd_image_xai_20062024/custom_lime_results/clustering-07-29-2024-06-05-39/"
+    clustering_result_dir: str = paths.configured_path("XAI_CLUSTERING_ROOT", "outputs/original/clustering-07-29-2024-06-05-39")
     img_dir: str = field(init=False)
     image_encoder_id: str = 'densenet121'
     graph_encoder_id: str = 'SETNET_GAT'
@@ -57,8 +59,8 @@ class Sampler:
     num_classes: int = 2
     clustering_algorithm: str = "agglomerative"
     num_layers: int = 1
-    test_data_dir: str = "/home/liuusa_tw/data/cropped_images/"
-    metadata_path: str = '/home/liuusa_tw/twbabd_image_xai_20062024/meta_data/TWB_ABD_expand_modified_gasex_21072022.csv'
+    test_data_dir: str = paths.image_dir()
+    metadata_path: str = paths.metadata_path()
     verbose: bool = True
     _pretrained_image_encoder: Callable = field(init=False, default= None)
     _graph_encoder: Callable = field(init=False, default= None)
@@ -75,20 +77,20 @@ class Sampler:
     
     def __post_init__(self):
         load_dotenv()
-        self.img_dir = os.getenv('CROP_IMAGE_DIR_PATH')
+        self.img_dir = paths.image_dir()
         if self.result_dir is None: 
             result_timestamp = datetime.datetime.now().strftime('%m-%d-%Y-%H-%M-%S')
-            self.result_dir = os.path.join("/home/liuusa_tw/twbabd_image_xai_20062024/custom_lime_results",
+            self.result_dir = os.path.join(paths.output_root(),
                                            f"stratified-sampling-{result_timestamp}")
             if not os.path.exists(self.result_dir):
                 os.mkdir(self.result_dir)
             print(f"results will be stored in {self.result_dir}")
                 
         if self._ckpt_name is None:
-            self._ckpt_name = f'/home/liuusa_tw/twbabd_image_xai_20062024/model_tl_twbabd{self.test_data_id}/best_results.ckpt'
+            self._ckpt_name = paths.checkpoint_path(self.test_data_id)
             
         if self.test_data_path is None:
-            self.test_data_path = f'fattyliver_2_class_certained_0_123_4_20_40_dataset_lists/dataset{self.test_data_id}/test_dataset{self.test_data_id}.csv'
+            self.test_data_path = paths.split_path(self.test_data_id)
         if self.image_encoder_id == 'resnet50':
             self.input_dim = 2048
         elif self.image_encoder_id == 'vitl16in21k':

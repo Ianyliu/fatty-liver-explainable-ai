@@ -1,3 +1,5 @@
+import project_paths as paths
+
 import ast
 import datetime
 import glob
@@ -17,10 +19,10 @@ from usflc_xai import datasets, models
 
 load_dotenv()
 
-CROP_IMAGE_DIR = os.getenv('CROP_IMAGE_DIR_PATH')
+CROP_IMAGE_DIR = paths.image_dir()
 test_data_id = '09'
-metadata_name = 'meta_data/TWB_ABD_expand_modified_gasex_21072022.csv'
-test_data_list_name = 'fattyliver_2_class_certained_0_123_4_20_40_dataset_lists/dataset'+str(test_data_id)+'/test_dataset'+str(test_data_id)+'.csv'
+metadata_name = paths.metadata_path()
+test_data_list_name = paths.split_path(test_data_id)
 test_data_list = pd.read_csv(test_data_list_name)
 meta_data = pd.read_csv(metadata_name, sep=",")
 
@@ -67,10 +69,10 @@ def select_unique_columns(df):
     # Transpose back to original orientation
     return df_unique.T
 
-result_dir = "/home/liuusa_tw/twbabd_image_xai_20062024/custom_lime_results/07-12-2024-03-57-58/"
+result_dir = paths.prediction_root()
 current_timestamp = datetime.datetime.now().strftime('%m-%d-%Y-%H-%M-%S')
-all_subj_save_dir = os.path.join("/home/liuusa_tw/twbabd_image_xai_20062024/custom_lime_results",f"elastic-net-old-dataset-{current_timestamp}")
-all_subj_save_dir = "/home/liuusa_tw/twbabd_image_xai_20062024/custom_lime_results/elastic-net-old-dataset-08-01-2024-06-59-39"
+all_subj_save_dir = os.path.join(paths.output_root(),f"elastic-net-old-dataset-{current_timestamp}")
+all_subj_save_dir = paths.configured_path("XAI_ELASTIC_OUTPUT", "outputs/original/elastic-net-old-dataset-08-01-2024-06-59-39")
 if not os.path.exists(all_subj_save_dir):
     os.mkdir(all_subj_save_dir)
 if result_dir.endswith("/"):

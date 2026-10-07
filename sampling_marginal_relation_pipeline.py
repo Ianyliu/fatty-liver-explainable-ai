@@ -1,3 +1,5 @@
+import project_paths as paths
+
 import ast
 import datetime
 import gc
@@ -1147,10 +1149,10 @@ class LIME_all_subj_pipeline:
     num_classes: int = 2
     num_layers: int = 1
     input_dim: int = 1024
-    test_data_dir: str = "/home/liuusa_tw/data/cropped_images/"
+    test_data_dir: str = paths.image_dir()
     ckpt_name: str = None
     test_data_list_name: str = None
-    metadata_name: str = 'meta_data/TWB_ABD_expand_modified_gasex_21072022.csv'
+    metadata_name: str = paths.metadata_path()
     image_based: bool = True
     verbose: bool = True
     sample: set = None
@@ -1159,13 +1161,13 @@ class LIME_all_subj_pipeline:
     def __post_init__(self):
         
         if self.test_data_list_name is None:
-            self.test_data_list_name = 'fattyliver_2_class_certained_0_123_4_20_40_dataset_lists/dataset'+str(self.test_data_id)+'/test_dataset'+str(self.test_data_id)+'.csv'
+            self.test_data_list_name = paths.split_path(self.test_data_id)
         if self.ckpt_name is None:
-            self.ckpt_name = 'model_tl_twbabd'+str(self.test_data_id)+'/best_results.ckpt'
+            self.ckpt_name = paths.checkpoint_path(self.test_data_id)
             
         if self.result_dir is None:
             result_timestamp = datetime.datetime.now().strftime('%m-%d-%Y-%H-%M-%S')
-            self.result_dir = os.path.join("/home/liuusa_tw/twbabd_image_xai_20062024/custom_lime_results", result_timestamp)
+            self.result_dir = os.path.join(paths.output_root(), result_timestamp)
             if not os.path.exists(self.result_dir):
                 os.mkdir(self.result_dir)
                 
@@ -1307,7 +1309,7 @@ class LIME_all_subj_pipeline:
             mi_id_LIME = LIME_subj_pipeline(test_data_id = self.test_data_id, 
                                             img_list = img_id_list,
                                             mi_id = mi_id,
-                                            img_dir = os.getenv('CROP_IMAGE_DIR_PATH'),
+                                            img_dir = paths.image_dir(),
                                             pred_func = subj_pred_func,
                                             verbose = True,
                                             image_based = True,
