@@ -1,3 +1,17 @@
+# Reproducing on a new cluster
+
+Read [REPRODUCIBILITY_AUDIT.md](REPRODUCIBILITY_AUDIT.md) before running an experiment. The uploaded images are incomplete for test split 09, and original prediction tables/reference explanations are still needed. Scientific behavior has not been repaired or rewritten.
+
+- Create the locked Python 3.9 environment: `bash scripts/setup_env.sh` (requires uv, GCC, gfortran, and download access).
+- Local artifacts belong in ignored `data/`, `checkpoints/`, `usflc_xai/`, `outputs/`, and `logs/`. Configure paths using `.env.example`; copy it to ignored `.env`.
+- Check imports without fitting: `.venv/bin/python scripts/check_environment.py`.
+- Audit inputs: `.venv/bin/python scripts/audit_reproducibility.py --strict`. Detailed patient/file reports stay under ignored `outputs/reproducibility/`.
+- For Slurm, create `logs/` and submit from the repository root: `sbatch slurm/preflight.sbatch`. Supply your cluster account/partition as `sbatch` flags when required.
+- See [the original-server handoff prompt](docs/ORIGINAL_SERVER_HANDOFF.md) to recover matching predictions, reference outputs, missing images, and provenance.
+- Validate one saved patient's inputs with `.venv/bin/python scripts/reproduce_patient.py --patient <MI_ID> --predictions <path/to/pred_results.csv> --output <new/output/directory>`. This validates only; `--execute` explicitly runs the existing Ridge workflow with its original 10,000 bootstrap fits. The same arguments work with `sbatch slurm/reproduce_patient.sbatch ...`.
+
+The original pipeline description below is retained for context. Its first entry point imports `sampling_marginal_relation_pipeline.py`; the separate `marginal_relation.py` reprocesses saved predictions. Historical notebooks and archived clustering code retain their original path references; consult the audit before using them.
+
 <h1 align="center">Explainable Disease Classification via Multi-Ultrasound Images</h1>
 
 
