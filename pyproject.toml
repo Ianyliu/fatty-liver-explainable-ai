@@ -1,0 +1,36 @@
+[project]
+name = "fatty-liver-explainable-ai"
+version = "0.1.0"
+description = "Cluster migration environment for auditing existing ultrasound explanations"
+requires-python = ">=3.9,<3.10"
+dependencies = [
+  "numpy==1.22.4",
+  "scipy==1.7.3",
+  "pandas==1.4.2",
+  "scikit-learn==1.0.2",
+  "scikit-image==0.19.2",
+  "matplotlib==3.8.0",
+  "seaborn==0.13.2",
+  "pillow==9.0.1",
+  "joblib==1.1.0",
+  "tqdm==4.64.0",
+  "python-dotenv==1.0.1",
+  "torch==2.1.0",
+  "torchvision==0.16.0",
+  "torch-geometric==2.3.1",
+  "timm==0.6.7",
+  "lime==0.2.0.1",
+  "glmnet==2.2.1",
+  "setuptools==59.8.0",
+  "wheel==0.45.1",
+]
+
+[project.optional-dependencies]
+notebooks = ["ipykernel==6.29.5", "nbformat==5.10.4"]
+
+[tool.uv]
+package = false
+no-build-isolation-package = ["glmnet"]
+
+[tool.uv.extra-build-dependencies]
+glmnet = ["numpy==1.22.4", "setuptools==59.8.0", "wheel==0.45.1"]
