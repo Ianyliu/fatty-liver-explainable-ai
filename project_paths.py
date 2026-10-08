@@ -39,3 +39,5 @@ def prediction_root():
 
 # Normalize before usflc_xai captures this variable at import time.
 os.environ["CROP_IMAGE_DIR_PATH"] = image_dir()
+# Normalize the encoder cache too, including when called outside the repo root.
+os.environ["TORCH_HOME"] = configured_path("TORCH_HOME", "checkpoints/torch")

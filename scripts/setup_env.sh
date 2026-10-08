@@ -11,7 +11,8 @@ if [[ -z "$uv_bin" ]]; then
     exit 1
 fi
 export UV_CACHE_DIR="${UV_CACHE_DIR:-${SCRATCH:-/tmp}/fatty-liver-uv-cache}"
-export UV_PYTHON_INSTALL_DIR="${UV_PYTHON_INSTALL_DIR:-$UV_CACHE_DIR/python}"
+# The interpreter must be on shared storage for Discovery compute nodes.
+export UV_PYTHON_INSTALL_DIR="${UV_PYTHON_INSTALL_DIR:-$project_root/.uv/python}"
 export UV_LINK_MODE=copy
 "$uv_bin" python install 3.9.25
 "$uv_bin" venv --python 3.9.25 --allow-existing .venv

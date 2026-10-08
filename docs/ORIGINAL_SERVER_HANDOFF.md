@@ -1,5 +1,7 @@
 # Prompt for the agent on the original server
 
+For the current image-availability question, use [the focused image-search follow-up](ORIGINAL_SERVER_IMAGE_SEARCH.md). It does not assume the missing files still exist or require the user to know their location. The prompts below retain the earlier transfer/provenance history.
+
 Copy the prompt below into the agent on the original server. All exports should stay in private storage and be transferred directly, never through GitHub.
 
 ---

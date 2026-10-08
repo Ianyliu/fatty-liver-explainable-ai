@@ -1,10 +1,16 @@
 # Reproducing on a new cluster
 
-Read [REPRODUCIBILITY_AUDIT.md](REPRODUCIBILITY_AUDIT.md) before running an experiment. One supplied patient now has complete images, saved predictions and reference explanations; the full test09 image set remains incomplete. Original-runtime/source-used provenance still needs reconciliation before fitting. Scientific behavior has not been repaired or rewritten.
+Read [REPRODUCIBILITY_AUDIT.md](REPRODUCIBILITY_AUDIT.md) before running an experiment. The locked `uv` environment, Polaris CPU smoke and Discovery GPU smoke pass. The adaptive sampler now has tested mapping, label, count and subset-size repairs. The full test09 image set remains incomplete. The prospective complete-patient methods workflow has a defined evaluation protocol; cohort expansion still requires additional images and a pilot. Historical-runtime/source provenance remains unresolved for historical explanation replay.
+
+- Verify lock consistency, installed dependencies, active imports and synthetic numerical fits: `bash scripts/verify_env.sh`.
+- Run one complete patient with 20 random perturbations and one diagnostic probability-Ridge fit: `.uv/bin/uv run --frozen --offline python scripts/smoke_patient.py --output outputs/smoke/my-new-run`. It defaults to CPU, selects the smallest complete positive test patient with >=20 images, requires local model weights, and refuses to overwrite an output directory.
+- Add `--sampling adaptive` to exercise the repaired sampler; its report records achieved class balance and singleton-query overhead separately.
+- Run the prospective n=1 random/adaptive, independent-mask fidelity and deletion study using the [complete-patient workflow](docs/COMPLETE_PATIENT_STUDY.md). Its planned budgets are 1,000 training draws per arm, 200 shared evaluation draws and three seeds; cohort expansion remains gated on missing images.
+- See [the next-run guide](docs/NEXT_RUNS.md) for measured smoke results, limitations and direct Discovery submission from Polaris. Only one of the 135 target patients currently has complete images; a private upload plan identifies 152 images needed to complete nine more.
 
 - Create the locked Python 3.9 environment: `bash scripts/setup_env.sh` (requires uv, GCC, gfortran, and download access).
 - Local artifacts belong in ignored `data/`, `checkpoints/`, `usflc_xai/`, `outputs/`, and `logs/`. Configure paths using `.env.example`; copy it to ignored `.env`.
-- Check imports without fitting: `.venv/bin/python scripts/check_environment.py`.
+- Check imports without fitting: `.venv/bin/python scripts/check_environment.py`. Add `--numerics` to test tiny synthetic Ridge and compiled glmnet fits.
 - Audit a saved run without fitting: `.venv/bin/python scripts/audit_saved_run.py --run-dir outputs/original/<run> --report-dir outputs/reproducibility/<run>`. Keep July and November runs separate.
 - Audit inputs: `.venv/bin/python scripts/audit_reproducibility.py --strict`. Detailed patient/file reports stay under ignored `outputs/reproducibility/`.
 - For Slurm, create `logs/` and submit from the repository root: `sbatch slurm/preflight.sbatch`. Supply your cluster account/partition as `sbatch` flags when required.
