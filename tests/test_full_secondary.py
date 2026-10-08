@@ -1,5 +1,6 @@
 """Full secondary coverage, reuse, refits and protected manuscript updates."""
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -24,6 +25,7 @@ class FullSecondaryTests(unittest.TestCase):
             pilot={'patients':[dict(patients[i],patient_index=j) for j,i in enumerate(chosen)]}
             path=root/'pilot.json';path.write_text(json.dumps(pilot))
             records=secondary.mappings(patients,pilot,path,root/'full')
+            self.assertEqual(records,secondary.mappings(patients,pilot,Path(os.path.relpath(path)),root/'full'))
             self.assertEqual([len(x) for x in records],[405,135,375,125])
             self.assertEqual({r['patient_index'] for r in records[0] if r['reused']},set(chosen))
             self.assertEqual(next(r for r in records[0] if r['patient_index']==134 and r['seed']==2)['task'],29)

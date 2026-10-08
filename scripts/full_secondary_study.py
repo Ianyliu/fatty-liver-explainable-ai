@@ -48,6 +48,7 @@ def check_hashes(entries):
 
 
 def mappings(patients, pilot, pilot_path, root):
+    pilot_path=pilot_path.resolve();root=root.resolve()
     old={p['patient']:p for p in pilot['patients']}
     cpu_records=[];loo_records=[];cpu_tasks=[];loo_tasks=[]
     for item in patients:
