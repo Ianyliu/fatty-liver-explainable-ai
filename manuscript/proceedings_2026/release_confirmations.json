@@ -1,7 +1,10 @@
 {
   "schema": 1,
   "release_status": "internal_review_only",
-  "author_order": ["Ian Liu", "Tso-Jung Yen"],
+  "author_order": [
+    "Ian Liu",
+    "Tso-Jung Yen"
+  ],
   "confirmations": {
     "ian_final_review": false,
     "yen_opportunity_to_approve": false,
@@ -19,7 +22,8 @@
     "workflow_publication_permission": false,
     "final_figures": false,
     "final_pdf_visual_qa": false,
-    "times_new_roman_or_asa_exception": false
+    "times_new_roman_or_asa_exception": false,
+    "clinical_image_publication_permission": false
   },
-  "note": "Change confirmations only on actual author evidence. This file does not authorize publication."
+  "note": "Change author confirmations only on actual author evidence. Ian authorized use of ultrasound images for private review on 2026-10-08; public-use eligibility remains pending. Times New Roman is available locally, with final embedding verified by PDF QA. This file does not authorize publication."
 }
