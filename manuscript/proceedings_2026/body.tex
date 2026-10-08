@@ -67,7 +67,7 @@ The analysis independently checks training masks and responses, surrogate fits, 
 
 \section{Results}
 \subsection{Image-level explanations}
-Figure~\ref{fig:influence} displays one patient's twenty ultrasound images with aligned Pearson, Ridge and Elastic Net summaries. The example uses random sampling and averages the three seed-specific estimates. A common image order makes agreement and disagreement visible without treating correlation and regression magnitudes as interchangeable. The patient is selected by defined, nonconstant explanation vectors rather than favorable evaluation performance.
+Figure~\ref{fig:influence} uses the original README's thumbnail-on-bar style to display one patient's twenty ultrasound images with aligned Pearson, Elastic Net and Ridge summaries. The example uses random sampling and averages the three seed-specific estimates. A common image order makes agreement and disagreement visible without treating correlation and regression magnitudes as interchangeable. The patient is selected by defined, nonconstant explanation vectors rather than favorable evaluation performance.
 
 \ImageInfluenceContrast{} The visualization illustrates the framework's central output: signed image-level associations with a grouped model's prediction. Marginal and conditional profiles can emphasize different views, and Elastic Net regularization can attenuate some coefficients. Neither a positive coefficient nor a visually prominent bar establishes that an image contains a particular pathological feature. No uncertainty or significance coding is applied.
 \begin{figure}[!htbp]\centering\includegraphics[width=\linewidth]{figures/figure2_influence.pdf}\caption{\InfluenceCaption}\label{fig:influence}\end{figure}

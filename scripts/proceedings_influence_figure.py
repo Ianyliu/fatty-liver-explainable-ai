@@ -43,44 +43,46 @@ def example_data():
 def influence_figure(pilot,output):
     configure();example=example_data();values=example['values'];n=len(values)
     require(n==20,'The validated pilot illustration expects twenty images')
-    fig=plt.figure(figsize=(5.5,7.2))
-    fig.text(.025,.975,'A',fontsize=11,weight='bold',va='top')
-    fig.text(.085,.975,'One patient, twenty ultrasound images',fontsize=10,weight='bold',va='top')
-    fig.text(.085,.935,'Validated ten-patient cohort · random sampling · means over three seeds',fontsize=8)
-    for j,path in enumerate(example['images']):
-        row,col=divmod(j,5)
-        ax=fig.add_axes([.085+col*.177,.825-row*.095,.151,.070])
-        ax.imshow(Image.open(path),cmap='gray');ax.axis('off')
-        ax.text(.5,-.07,values.image_label.iloc[j],ha='center',va='top',transform=ax.transAxes,fontsize=8)
-    methods=[('marginal_correlation','B','Pearson','Correlation'),
-             ('ridge','C','Ridge','Probability\ncoefficient'),
-             ('elastic_net','D','Elastic Net','Probability\ncoefficient')]
-    for k,(method,letter,title,xlabel) in enumerate(methods):
-        ax=fig.add_axes([.13+k*.285,.12,.235,.35])
-        g=values[method].to_numpy()
+    # Preserve the README's visual language: signed vertical bars with ultrasound
+    # thumbnails next to the bar ends. No historical uncertainty is transferred.
+    display=values.sort_values('marginal_correlation',ascending=False,kind='stable')
+    order=display.index.to_numpy();positions=np.arange(n)
+    fig=plt.figure(figsize=(5.5,7.1))
+    fig.text(.13,.975,'Image-level marginal and conditional influence',fontsize=10,weight='bold')
+    fig.text(.13,.947,'One validated pilot patient · random sampling · three-seed means',fontsize=8)
+    methods=[('marginal_correlation','A','Pearson correlation','Correlation'),
+             ('elastic_net','B','Elastic Net','Probability coefficient'),
+             ('ridge','C','Ridge','Probability coefficient')]
+    for k,(method,letter,title,ylabel) in enumerate(methods):
+        ax=fig.add_axes([.13,.70-k*.30,.84,.18])
+        g=display[method].to_numpy();span=max(float(np.ptp(g)),float(np.max(np.abs(g))),1e-4)
+        ax.bar(positions,g,width=.79,color=np.where(g>=0,'#2AC6F2','#FA9B90'),
+               edgecolor=np.where(g>=0,'#168BAA','#BC645B'),linewidth=.4,zorder=2)
+        ax.axhline(0,c='#4E5964',lw=.65,zorder=3)
+        for position,index,value in zip(positions,order,g):
+            direction=1 if value>=0 else -1
+            center=value+direction*.105*span
+            ax.imshow(Image.open(example['images'][index]),
+                extent=(position-.365,position+.365,center-.075*span,center+.075*span),
+                aspect='auto',zorder=4)
+        ax.set(xlim=(-.65,n-.35),ylim=(min(0,float(g.min()))-.25*span,max(0,float(g.max()))+.25*span),
+               xticks=positions,xticklabels=display.image_label,ylabel=ylabel)
+        ax.tick_params(axis='x',labelsize=7,labelrotation=55,length=2,pad=1)
+        ax.tick_params(axis='y',labelsize=7.5)
+        ax.locator_params(axis='y',nbins=4)
         color=COLORS['pearson' if method=='marginal_correlation' else method]
-        ax.barh(np.arange(n),g,height=.68,color=np.where(g>=0,POSITIVE,NEGATIVE),zorder=3)
-        ax.axvline(0,c='#343D46',lw=.8,zorder=4)
-        ax.set(yticks=np.arange(n),yticklabels=values.image_label if k==0 else [],ylim=(n-.5,-.5),xlabel=xlabel)
-        ax.set_title(title,loc='left',fontsize=9.5,color=color,pad=14,weight='bold')
-        ax.text(-.20,1.065,letter,transform=ax.transAxes,fontsize=11,weight='bold')
-        bound=max(np.max(np.abs(g))*1.12,1e-4);ax.set_xlim(-bound,bound)
-        ax.tick_params(axis='y',length=0,labelsize=8)
-        ax.spines['left'].set_visible(False);ax.grid(axis='y',color='#EDF0F2',lw=.4,zorder=0)
-        ax.tick_params(axis='x',labelsize=7.7)
-        ax.locator_params(axis='x',nbins=3)
-    fig.text(.13,.035,'Positive association',color=POSITIVE,fontsize=8.3,weight='bold')
-    fig.text(.47,.035,'Negative association',color=NEGATIVE,fontsize=8.3,weight='bold')
-    fig.text(.13,.012,'Image ordering is shared across panels; coefficient and correlation scales differ.',fontsize=7.8)
+        ax.set_title(title,loc='left',fontsize=9.5,color=color,weight='bold',pad=10)
+        ax.text(-.10,1.16,letter,transform=ax.transAxes,fontsize=11,weight='bold')
+    fig.text(.13,.025,'Cyan: positive association     Coral: negative association',fontsize=8)
+    fig.text(.13,.005,'Same image order in all panels; no significance fading or uncertainty intervals.',fontsize=7.5)
     save(fig,Path(output),'figure2_influence')
     values.to_csv(Path(output)/'image_influence_example.csv',index=False)
-    caption=(f'Patient-level explanation example from the validated ten-patient cohort (pilot ordinal {example["index"]+1}). '
-        'A, twenty cropped ultrasound views, labeled I01–I20 in the frozen image order. '
-        'B–D, Pearson inclusion–probability correlations and Ridge/Elastic Net probability-regression coefficients '
-        'from random sampling, averaged over seeds 0, 1 and 2; image ordering is identical across all panels. '
-        'Blue and terracotta denote positive and negative associations with class-1 probability. '
-        'Correlation and coefficient axes have different units and scales; magnitudes are not directly interchangeable. '
-        'The illustration is the first pilot patient with nonconstant vectors for every method, arm and seed, '
-        'rather than a patient selected for fidelity or deletion success. No significance coding or confidence intervals are shown. '
-        'These are perturbation-distribution-dependent model-output associations, not clinical or causal image importance.')
+    caption=(f'Image-influence plots in the original README style, using current validated outputs (pilot ordinal {example["index"]+1}). '
+        'A, marginal Pearson inclusion–probability correlations; B–C, conditional Elastic Net and Ridge probability-regression coefficients. '
+        'Bars show means over seeds 0, 1 and 2 under random sampling, with the corresponding cropped ultrasound view beside each bar end. '
+        'All panels share the same twenty images and order, sorted by mean Pearson correlation. I01–I20 are display labels assigned in the frozen image order. '
+        'Cyan and coral denote positive and negative associations. Correlation and coefficient axes have different units and scales. '
+        'The example is the first pilot patient with nonconstant vectors for every method, arm and seed, not selected for evaluation success. '
+        'Historical error bars and faded significance coding are omitted because current uncertainty estimates have not been validated. '
+        'These are perturbation-distribution-dependent model-output associations, not clinical or causal importance.')
     return caption,example
