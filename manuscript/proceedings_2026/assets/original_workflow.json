@@ -8,8 +8,8 @@
   ],
   "retrieved_date": "2026-10-08",
   "editable_original_search": "Recovered the editable mxfile embedded in the original source PNG; URL-decoded without altering diagram content.",
-  "adaptation": "scripts/proceedings_workflow.py follows the original topology and explicitly changes historical classifier/CV and physician-evaluation claims.",
-  "public_release": "Requires author review; retained original is historical supplementary material, not validation evidence.",
+  "adaptation": "Original README artwork restored unchanged as main Figure 1; historical versus current methods are stated in the caption.",
+  "public_release": "Requires author review and image-publication eligibility; main Figure 1 is the original conceptual workflow, not evidence of completed physician validation.",
   "editable_original": {
     "path": "original_workflow.drawio",
     "sha256": "aabc16c5c36144e5f3e02a1f1143bec7dc9015f0714f9a669385c8b0d5a69cdb",
