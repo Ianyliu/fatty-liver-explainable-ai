@@ -63,3 +63,14 @@ The destination now has the selected patient's complete July inputs/references, 
 > 4. The original bundle manifest's `provenance/file_sizes.tsv` entry declares zero bytes and a hash that does not match the supplied 9,804-byte file. All other 142 listed payloads pass. Clarify/correct this administrative listing in a separate manifest, preserving the original; omit self-referential manifest/listing entries when computing their hashes.
 >
 > Return aggregate findings and the private bundle/report location. Do not export credentials or `.env` contents.
+
+## Follow-up report received
+
+The report labeled 2026-10-08 resolves current imported versions: Python 3.9.12, NumPy 1.20.0, SciPy 1.7.3, sklearn 1.5.1, joblib 1.4.2, pandas 1.4.2, matplotlib 3.5.1, Torch 2.1.0+cu121. The investigation did not establish historical run commands, stage linkage, RNG states, or the exact historically used source/environment. Repeating the same broad search is not a prerequisite to a controlled comparison on the destination.
+
+Remaining transfers, when needed:
+
+- For the full cohort, send the destination's private `outputs/reproducibility/missing_test_images.csv` to the original server. It contains 14,940 missing test09 image references. Ask that agent to copy/hash the exact matching JPEGs into a separate private bundle.
+- For stronger provenance verification, transfer just the new follow-up bundle's `provenance/runtime/`, separate corrected payload/file-size manifests, and any changed source snapshots. The duplicate patient images/models/results need not be retransferred unless their hashes changed. The report alone does not verify the corrected manifests locally.
+
+Keep these transfers private. Existing destination data supports the first saved-July single-patient comparison; preserve the existing migration environment and distinguish numerical comparison from exact historical reproduction.
