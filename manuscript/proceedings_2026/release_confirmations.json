@@ -17,6 +17,8 @@
     "code_availability_statement": false,
     "ai_disclosure": false,
     "workflow_publication_permission": false,
+    "final_figures": false,
+    "final_pdf_visual_qa": false,
     "times_new_roman_or_asa_exception": false
   },
   "note": "Change confirmations only on actual author evidence. This file does not authorize publication."

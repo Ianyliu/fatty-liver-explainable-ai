@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "verified_date": "2026-10-08",
+  "policy": "Original publication, conference metadata or original paper PDF checked; publisher-blocked metadata supplemented with DOI registry. No invented DOI, pages or contribution assignments.",
+  "references": [
+    {
+      "key": "yen2024fattyliver",
+      "canonical_url": "https://doi.org/10.1038/s41598-024-57386-3",
+      "checked_url": "https://www.nature.com/articles/s41598-024-57386-3",
+      "status": "verified",
+      "checked_fields": ["authors", "title", "year", "journal", "volume", "article_number", "doi"],
+      "notes": "Article 7345, volume 14; all five authors checked. Source affiliation/ethics statements are historical evidence, not confirmation for this manuscript."
+    },
+    {
+      "key": "ribeiro2016lime",
+      "canonical_url": "https://doi.org/10.1145/2939672.2939778",
+      "checked_url": "https://www.kdd.org/kdd2016/papers/files/rfp0573-ribeiroA.pdf",
+      "supplementary_metadata_url": "https://api.crossref.org/works/10.1145/2939672.2939778",
+      "status": "verified",
+      "checked_fields": ["authors", "full_title", "year", "conference", "pages", "doi"],
+      "notes": "Original conference PDF supplies full title/authors/DOI; DOI registry supplies proceedings page range 1135–1144. ACM HTML returned 403."
+    },
+    {
+      "key": "ying2019gnnexplainer",
+      "canonical_url": "https://proceedings.neurips.cc/paper_files/paper/2019/hash/d80b7040b773199015de6d3b4293c8ff-Abstract.html",
+      "checked_url": "https://proceedings.neurips.cc/paper_files/paper/2019/file/d80b7040b773199015de6d3b4293c8ff-Metadata.json",
+      "status": "verified",
+      "checked_fields": ["authors", "title", "year", "venue", "volume", "pages"],
+      "notes": "Current official author name Zhitao Ying used; archived PDF says Rex Ying. Official publisher metadata gives pages 9244–9255. No DOI is asserted."
+    },
+    {
+      "key": "hoerl1970ridge",
+      "canonical_url": "https://doi.org/10.1080/00401706.1970.10488634",
+      "checked_url": "https://www.stat.cmu.edu/technometrics/70-79/VOL-12-01/v1201055.pdf",
+      "supplementary_metadata_url": "https://api.crossref.org/works/10.1080/00401706.1970.10488634",
+      "status": "verified",
+      "checked_fields": ["authors", "title", "year", "journal", "volume", "issue", "pages", "doi"],
+      "notes": "Original journal scan verified (13 pages, printed pages 55–67). Publisher HTML is blocked; DOI registry agrees. Original publication year 1970, not digitization year 2012."
+    },
+    {
+      "key": "zou2005elasticnet",
+      "canonical_url": "https://doi.org/10.1111/j.1467-9868.2005.00503.x",
+      "checked_url": "https://academic.oup.com/jrsssb/article/67/2/301/7109482",
+      "status": "verified",
+      "checked_fields": ["authors", "title", "year", "journal", "volume", "issue", "pages", "doi"],
+      "notes": "Original publisher page: volume 67, issue 2, pages 301–320, published March 9, 2005."
+    },
+    {
+      "key": "lundberg2017shap",
+      "canonical_url": "https://proceedings.neurips.cc/paper_files/paper/2017/hash/8a20a8621978632d76c43dfd28b67767-Abstract.html",
+      "checked_url": "https://proceedings.neurips.cc/paper_files/paper/2017/file/8a20a8621978632d76c43dfd28b67767-Metadata.json",
+      "status": "verified",
+      "checked_fields": ["authors", "title", "year", "venue", "volume", "pages"],
+      "notes": "Official metadata and paper text checked; pages 4765–4774. No DOI is asserted."
+    }
+  ],
+  "optional_reference_not_included": {
+    "canonical_url": "https://doi.org/10.1214/aos/1176344552",
+    "title": "Bootstrap Methods: Another Look at the Jackknife",
+    "reason": "No current bootstrap analysis is performed. DOI metadata confirms title/author/volume/year, but original full-text access was blocked and registry metadata omitted pages. Omitted rather than claiming complete original-source verification."
+  },
+  "external_factual_sources": [
+    {
+      "claim": "Source data provider/acquisition site and historical institutional approvals",
+      "url": "https://www.nature.com/articles/s41598-024-57386-3",
+      "status": "verified_source_publication_only",
+      "note": "Taiwan Biobank; MacKay Memorial Hospital Health Examination Center; AS-IRB01-17049 and AS-IRB01-21009. Present secondary-use coverage needs author confirmation."
+    },
+    {
+      "claim": "Accepted poster title and authors",
+      "url": "https://ww2.amstat.org/meetings/jsm/2026/onlineprogram/abstract.cfm?sid=8718&tid=8936",
+      "status": "verified_official_program"
+    },
+    {
+      "claim": "Proceedings deadline and formatting",
+      "url": "https://ww2.amstat.org/meetings/jsm/2026/submissions.cfm",
+      "status": "verified_official_instructions"
+    }
+  ]
+}

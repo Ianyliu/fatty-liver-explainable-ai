@@ -1,5 +1,121 @@
 \begin{abstract}
-This exploratory study evaluates how the perturbation distribution affects image-subset explanations of a fixed patient-level ultrasound graph neural network. Validated numerical results and the complete methods are generated from preserved experimental artifacts.
+Patient-level graph neural networks can combine multiple ultrasound images, but their predictions do not directly reveal how an image-subset explanation depends on its perturbation distribution. We evaluate a LIME-inspired framework that regresses a fixed model's class-1 probability on binary image-inclusion indicators. Random subsets are compared with a repaired two-stage adaptive sampler using singleton-predicted image pools. The exploratory pilot comprises ten patients and three seeds. A subsequent expansion includes all 135 eligible positive test-split patients and follows inspection of the pilot. In the validated analysis presented in this build (\PrimaryN{} patients), mean patient-level shared-novel-mask MAE is \RandomMAE{} for random sampling and \AdaptiveMAE{} for adaptive sampling; the paired adaptive-minus-random difference is \PairedMAE{}. Adaptive sampling reaches its requested class target in \TargetSuccesses{}/\PrimaryRuns{} runs. Additional ten-patient analyses examine training-only cross-validated Elastic Net, marginal correlations, seed stability and leave-one-image-out effects. Deletion experiments quantify model behavior under graph reconstruction. Unfavorable findings are retained without asserting clinical importance, causal effects, bootstrap inference or physician validation.
 \end{abstract}
+\noindent\textbf{Keywords:} explainable AI; graph neural networks; ultrasound; perturbation distribution; surrogate fidelity; regularization.
+
 \section{Introduction}
-The review manuscript is under construction. Its numerical content is supplied exclusively by the validated build.
+An ultrasound examination produces multiple views of a patient's tissues. A prediction model that aggregates those views can exploit information distributed across the image set, while leaving individual image contributions difficult to inspect. \citet{yen2024fattyliver} developed a grouped-image neural architecture for fatty-liver classification. We evaluate explanations of a supplied, fixed instance of that architecture rather than training or assessing a new diagnostic classifier.
+
+Local Interpretable Model-agnostic Explanations (LIME) approximates a model through interpretable perturbations \citep{ribeiro2016lime}. Here the perturbable units are images rather than superpixels: binary indicators record whether an image is retained in a patient graph. Related approaches include additive feature attribution \citep{lundberg2017shap} and graph-specific explanation through subgraph selection \citep{ying2019gnnexplainer}. Those alternative algorithms are not implemented or benchmarked here.
+
+The central question is whether changing the distribution of sampled subsets improves surrogate fidelity, makes class-balanced sampling feasible, or yields stable image rankings. We preserve the poster's conditional/marginal explanation narrative while distinguishing its historical hard-label classifiers from the validated probability-regression implementation. The analyses are exploratory; expansion followed inspection of the pilot. Neither favorable deletion behavior nor a coefficient ranking is interpreted as evidence of clinical utility.
+
+\section{Data and fixed prediction model}
+\subsection{Provenance and analysis populations}
+The source publication identifies Taiwan Biobank as the dataset provider and MacKay Memorial Hospital Health Examination Center in Taipei as the acquisition site \citep{yen2024fattyliver}. The local analysis uses the supplied test09 split and metadata. Eligibility requires a positive observed patient-level liver-fat label, at least 20 metadata-listed images, and complete image availability. All 135 eligible patients have complete coverage: 3,072 images, with 20--35 per patient. This does not establish coverage of the broader test set or clinical representativeness.
+
+The pilot consists of ten patients ordered by image count and then identifier; all have 20 images. After inspecting this convenience pilot, we expanded the unchanged main protocol to all eligible patients, reusing the pilot and adding 125 patients. Expansion includes the pilot and is not an independent replication. Observed disease labels define eligibility; singleton GNN predictions define image pools, with no observed image-level disease labels.
+
+\subsection{Preprocessing and graph prediction}
+The inference loader converts grayscale images to three channels, resizes them to $224\times224$, and applies ImageNet normalization. A cached ImageNet-pretrained DenseNet121 supplies image features to the supplied \texttt{SETNET\_GAT} split09 checkpoint. Correlation edges use the implemented threshold $>0.95$, excluding self-edges at this step; the GAT supplies its own self-loops. Every requested subset receives graph reconstruction and fresh encoder/GNN inference. No feature or prediction cache is introduced.
+
+The source publication describes a different edge threshold ($0.995$). These results concern the supplied implementation at $0.95$, not exact reconstruction of every published setting. We neither retrain the GNN nor apply the source publication's conformal-risk procedure. Source, weight, preprocessing and environment provenance are preserved by hashes.
+
+\section{Image-subset explanation framework}
+\subsection{Interpretable representation}
+For patient $i$ with $n_i$ images, let $u\in\{0,1\}^{n_i}$ denote an inclusion mask and $G_i(u)$ the reconstructed graph. The response is
+\begin{equation}q_i(u)=\Pr_{\mathrm{GNN}}(\text{class }1\mid G_i(u)).\end{equation}
+Each row pairs a mask with its softmax probability; the full-set prediction uses $u=\mathbf{1}$. Singleton predictions partition images into predicted-class-0 and predicted-class-1 pools. They do not annotate pathology or guarantee a multi-image subset's prediction. Figure~\ref{fig:workflow} adapts the author's original workflow to the completed implementation.
+
+\begin{figure}[!htbp]\centering\includegraphics[width=\linewidth]{figures/figure1_workflow.pdf}
+\caption{Adaptation of the preserved original workflow. Patient sets and singleton-predicted pools feed two-stage sampling, binary inclusion designs and grouped-image GNN responses. Conditional coefficients and marginal correlations describe model-output associations. Elastic Net and supplementary ranking/LOO analyses concern ten patients. Historical classifier/ten-fold-CV, bootstrap and physician-evaluation components are not established here. The complete historical figure is supplied separately.}\label{fig:workflow}\end{figure}
+
+\subsection{Perturbation distributions}
+Both arms receive 1,000 training rows per patient--seed. Random sampling draws subset size uniformly from integers $3,\ldots,n_i$, then samples distinct images without replacement. Masks can repeat between draws; repetitions remain rows and consume fresh model calls.
+
+Adaptive sampling requests 500 predictions in each model class. Stage I draws randomly while both quotas remain unmet. When one quota is reached and both singleton pools exist, Stage II favors the pool associated with the deficient class. The intended mixture is 85/15, with integer counts determined by the implemented rounding. The requested positive-pool count is clamped to the interval feasible under the available pools; deficits are reallocated to preserve subset size. A single available pool triggers the documented random fallback. Pool composition does not guarantee subset class, so requested and achieved behavior are reported separately.
+
+Column mapping, label normalization, batch budgets, seed/state handling and deficit reallocation were repaired before these frozen experiments. Historical draws are not reconstructed. Constructor validation and singleton probes are additional adaptive overhead: this comparison matches training rows, not total GNN queries, and supports no equal-compute efficiency claim.
+
+\subsection{Conditional and marginal summaries}
+Fixed-alpha Ridge regression \citep{hoerl1970ridge} estimates
+\begin{equation}(\widehat b,\widehat\beta)=\arg\min_{b,\beta}\left[\sum_{r=1}^{1000}\{q_i(u_r)-b-u_r^\mathsf{T}\beta\}^2+\|\beta\|_2^2\right].\end{equation}
+The intercept is fitted and unpenalized, columns are unscaled binary indicators, and no locality kernel is used. Scores are unconstrained and not clipped to $[0,1]$. This is a LIME-inspired patient-specific subset surrogate, without a claim to reproduce the original LIME weighting.
+
+The ten-patient comparison fits Elastic Net probability regression \citep{zou2005elasticnet}. Selection minimizes training-only mean squared error in shuffled five-fold CV over 25 log-spaced penalties from $10^{-4}$ to $1$ and mixing ratios $0.1,0.5,0.9,1$. The fold seed matches the training seed. Evaluation responses are never used for selection; predictors remain unscaled, an intercept is fitted, and convergence warnings fail the analysis.
+
+Pearson inclusion--probability correlation provides a marginal association, unavailable for zero-variance variables. Regression coefficients describe conditional linear model-output associations under the sampled distribution. They are not causal effects, isolated tissue contributions, or calibrated clinical importance. Historical hard-label classifiers, ten-fold tuning and bootstrap uncertainty are not part of these fits.
+
+\section{Evaluation and validation}
+\subsection{Shared-novel fidelity and the patient analysis unit}
+An independent RNG stream generates 200 random evaluation draws per patient--seed, shared by both arms. Masks can repeat or overlap training. Primary fidelity retains exactly the evaluation rows whose masks appeared in neither training arm, with multiplicity:
+\begin{equation}\mathrm{MAE}_{isa}=|\mathcal E_{is}|^{-1}\sum_{u\in\mathcal E_{is}}|q_i(u)-\widehat q_{isa}(u)|.\end{equation}
+Here $s$ is seed, $a$ is arm and $\mathcal E_{is}$ is the shared-novel multiset. Filtering changes the estimand and can preferentially remove large subsets. Its size, class support and subset-size distribution are retained. Empty sets produce unavailable metrics, never zero; one-class sets make class agreement alone uninformative.
+
+Each constant baseline equals its arm's training-mean GNN probability and is evaluated on the same shared-novel rows. All-draw MAE, RMSE and out-of-range surrogate scores are retained. Parameters are not selected from favorable evaluation responses.
+
+We average three seeds within each patient before weighting patients equally. A primary patient mean requires all three paired seed results. If any planned patient lacks a primary mean, the complete-cohort primary mean is unavailable; any available-patient display is labeled. Reported SD is descriptive sample SD across patient means. No significance tests or inferential confidence intervals are computed.
+
+\subsection{Deletion interventions}
+Images are ranked by signed class-1 Ridge coefficients in descending and ascending order, with a seeded random control and fixed image-ID tie breaking. Nominal deletion fractions are 0, 0.1, 0.2, 0.3, 0.4 and 0.5. Their products with image count are floored to integers, at least three nodes are retained, and repeated rounded counts are evaluated once. Actual fractions are recorded. Every retained subset receives graph reconstruction. The original prediction is shared at zero deletion, and one random-order curve per patient--seed is shared across arms.
+
+Raw AUC integrates class-1 probability over actual deleted fractions by the trapezoidal rule. Contrasts between descending order and each control are paired within patient--seed and averaged within patient. A negative contrast means a lower class-1 trajectory after deleting the largest positive coefficients. Curves need not be monotone. Unequal fraction grids are not pooled as identical; normalized AUC is supplementary. These are model interventions, not clinical or causal importance measurements.
+
+\subsection{Additional diagnostics and validation}
+Ten-patient seed stability uses Spearman correlation, top-five Jaccard similarity and sign agreement over three seed pairs. Constant/undefined rankings are unavailable, not deemed stable through arbitrary tie breaking. Leave-one-image-out (LOO) measures full-graph minus omitted-image probability under graph reconstruction. Correlation with coefficient/marginal rankings is descriptive; additional rankings have no fresh multi-node deletion evaluation.
+
+Independent validation reconciles masks, responses, classes, query ledgers, coefficients, shared-novel flags and deletion areas. The pilot review refitted 60 Ridge and 60 Elastic Net models and checked recorded CV selections. CPU-only manuscript audits reconstruct pool composition and centered-design singular values from saved tables without additional GNN queries. Table~\ref{tab:design} specifies the design.
+\input{generated/design.tex}
+
+\section{Results}
+\subsection{Ten-patient pilot}
+All \PilotRuns{} pilot patient--seed runs completed, consuming \PilotQueries{} P0 calls; LOO added \PilotLOOQueries{} calls. Random and adaptive Ridge mean patient MAE were \PilotRandomMAE{} and \PilotAdaptiveMAE{}, with paired difference \PilotPairedMAE{}. Random had lower mean MAE for \PilotRandomFavored{}/10 patients. Adaptive attained its target in \PilotTargetSuccesses{}/\PilotRuns{} runs; \PilotDeficitRows{}/\PilotBiasedRows{} biased draws required deficit reallocation. Failures remain findings rather than reasons to retune or discard runs.
+
+All \PilotDesigns{} centered designs had full column rank, which does not establish class balance or informative responses. \PilotOneClassSets{} of \PilotRuns{} shared-novel sets contained one GNN class. Elastic Net minus Ridge mean MAE was \PilotRandomEnetDelta{} under random sampling and \PilotAdaptiveEnetDelta{} under adaptive sampling. Random Elastic Net stability was defined for \PilotRandomEnetStabilityN{} patients across all seeds; the other displayed method/arm combinations had ten. These differences are descriptive.
+
+\subsection{Primary population in this build}
+\PrimaryStatusText
+Across \PrimaryN{} patients and \PrimaryRuns{} runs, the validated ledger contains \PrimaryQueries{} P0 calls. Random and adaptive mean MAE are \RandomMAE{} and \AdaptiveMAE{}, with paired difference \PairedMAE{}. Random favors \RandomFavored{} patient means and adaptive \AdaptiveFavored{}. Tables~\ref{tab:fidelity}--\ref{tab:fidelity_counts} give dispersion, baselines and availability; Figure~\ref{fig:fidelity} displays paired comparisons. Unavailable primary metrics are explicitly labeled.
+\input{generated/fidelity.tex}
+\input{generated/fidelity_counts.tex}
+
+\subsection{Feasibility and deletion behavior}
+Adaptive reached its target in \TargetSuccesses{}/\PrimaryRuns{} runs. Reallocation occurred in \DeficitRows{}/\BiasedRows{} biased draws. Table~\ref{tab:sampling} and Figure~\ref{fig:sampling} distinguish the intended mixture, realized pool composition and subset predictions. Duplicates remain rows; condition numbers describe designs rather than inferential guarantees.
+\input{generated/sampling.tex}
+\begin{figure}[!htbp]\centering\includegraphics[width=\linewidth]{figures/figure2_sampling.pdf}\caption{\SamplingCaption}\label{fig:sampling}\end{figure}
+\begin{figure}[!htbp]\centering\includegraphics[width=\linewidth]{figures/figure3_fidelity.pdf}\caption{\FidelityCaption}\label{fig:fidelity}\end{figure}
+
+Mean patient descending-minus-random raw deletion AUC is \RandomDeletionDelta{} for random-trained Ridge and \AdaptiveDeletionDelta{} for adaptive-trained Ridge. Table~\ref{tab:deletion} includes ascending controls; Figure~\ref{fig:deletion} shows matched interventions and variability. Lower deletion AUC need not imply low probability MAE: these diagnostics answer different questions.
+\input{generated/deletion.tex}
+\begin{figure}[!htbp]\centering\includegraphics[width=\linewidth]{figures/figure4_deletion.pdf}\caption{\DeletionCaption}\label{fig:deletion}\end{figure}
+
+\section{Discussion}
+Perturbation sampling is part of the explanation estimand. A biased training distribution weights model behavior differently from uniform subset-size sampling. Shared evaluation masks permit direct fidelity comparisons on a specified distribution, not a universal neighborhood guarantee. Novel-mask filtering adds conditioning on masks not encountered during training.
+
+The pilot does not support a general improvement in fidelity or attainment of the requested adaptive balance. Singleton-pool capacities and interactions among images limit the connection between a pool mixture and the subset's class. Reallocation preserves subset size but changes the intended composition. Realized behavior must therefore accompany sampling targets.
+
+Conditional coefficients and marginal correlations offer different descriptive views. Regularization mitigates conditioning problems but does not identify a unique biological explanation. Rankings depend on correlated inclusion patterns, near-constant model responses, regularization and seed. A tie-broken all-zero Elastic Net ranking is not evidence of importance stability. LOO concerns a single deletion near the full graph; regression averages across many subset sizes. Agreement is neither guaranteed nor a clinical validation criterion.
+
+Limitations include restriction to complete positive patients, one test split/checkpoint, convenience pilot selection and expansion after inspecting results. Expansion includes the pilot. Three seeds measure within-patient repeatability rather than independent patient replication. Training-row budgets have unequal GNN-query costs, and one random-deletion order per seed does not characterize the full random-control distribution. No physician evaluation, external clinical validation or population-level hypothesis test was performed.
+
+Deferred experiments include matched total-query budgets, pool-ratio/subset-size sensitivity, repeated random-deletion orders, multi-node deletion for additional rankings, and larger seed-stability studies. Historical bootstrap formulas and artifact provenance need separate validation before uncertainty is reported. None is presented as a completed analysis.
+
+\section{Conclusion}
+Image-subset surrogates reproducibly inspect grouped-image GNN behavior when interpretation is tied to the perturbation distribution. The evaluation emphasizes fidelity, feasibility and repeatability, retaining unfavorable results. Deletion interventions complement surrogate fidelity without proving clinical image importance.
+
+\section*{Acknowledgments and declarations}
+\noindent\textit{The following statements require author confirmation before release.}
+
+\textbf{Contributions.} \pending{Both authors must assign conception and supervision, GNN development, explanation development, experiments, validation and writing. Roles are not inferred from the prior paper.}
+
+\textbf{Funding.} \pending{Confirm support for this specific work. Earlier grants have not been reused or converted to a declaration of no funding.}
+
+\textbf{Competing interests.} \pending{Both authors must declare interests before a statement of none is made.}
+
+\textbf{Ethics and consent.} The source publication reports Taiwan Biobank and institutional approvals AS-IRB01-17049 and AS-IRB01-21009 \citep{yen2024fattyliver}. \pending{Confirm present secondary-use coverage, agreements and applicable consent statement.}
+
+\textbf{Data availability.} Taiwan Biobank is the provider and MacKay Memorial Hospital the acquisition site documented in the source paper. Private images, metadata and individual identifiers are not distributed. \pending{Confirm approved access mechanisms and secondary-use restrictions with the data holders.}
+
+\textbf{Code availability.} Reproducibility and manuscript scripts are separate from restricted data and weights. \pending{Confirm releasable code and an approved public version/repository. No checkpoint redistribution is implied.}
+
+\textbf{AI-assisted preparation.} AI coding/writing assistance helped develop checks, draft text and plotting code. \pending{Authors must verify the scientific content, retain responsibility and confirm final disclosure wording.}

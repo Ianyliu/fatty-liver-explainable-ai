@@ -1,2 +1,15 @@
+\section{Additional diagnostics: ten patients only}
+Table~\ref{tab:secondary} and Figure~\ref{fig:diagnostics} concern the ten-patient convenience cohort, regardless of the primary build population. They do not imply expanded Elastic Net, Pearson stability or LOO experiments.
+\input{generated/secondary.tex}
+\begin{figure}[!htbp]\centering\includegraphics[width=\linewidth]{figures/figure5_diagnostics.pdf}\caption{\DiagnosticsCaption}\label{fig:diagnostics}\end{figure}
+
 \section{Reproducibility and analysis status}
-The build records source-artifact hashes, validation status, package versions and figure provenance. Historical classifier explanations are distinct from the present probability-regression implementation.
+The private package includes an evidence ledger, artifact hashes, generated tables, figure captions, reference verification, build instructions, source snapshots and a release checklist. Full mode requires all 135 patients and 405 validated runs, with no partial fallback. Inference sources and inputs remain frozen while manuscript assets are regenerated.
+
+Environment and CPU/GPU smoke checks preceded the studies. Image-transfer checksums and eligible-cohort coverage were verified before expansion. Raw ledgers reconcile queries, masks, probabilities and fits. Constructor validation and singleton probes are overhead; duplicates consume fresh calls. CPU-only manuscript diagnostics add no inference queries.
+
+Shared-novel row counts and single-class warnings accompany the primary tables. Patients are the analysis unit; masks, folds and seed pairs do not inflate the patient sample size. Constant metrics remain unavailable. SD describes patient means, not standard errors.
+
+The original workflow is preserved separately as \texttt{original\_workflow\_historical.pdf} and its source PNG. Historical classifier, ten-fold-CV and physician-evaluation labels are not evidence that those steps were completed here. The main figure is an explicitly adapted vector rendering.
+
+Studies with matched total query budgets, sensitivity to sampling ratios and subset sizes, repeated random controls, deletion using additional rankings, expanded stability, historical bootstrap inference and clustering ablations remain deferred. The status record distinguishes them from completed experiments and pending expansion jobs.
