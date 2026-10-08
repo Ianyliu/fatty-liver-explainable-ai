@@ -26,8 +26,7 @@ def fidelity_figure(data,pilot,output):
         b.axvline(values.mean(),c='#20262D',lw=1.2,ls=':')
         b.text(.96,.95,f'Mean {values.mean():+.4f}',transform=b.transAxes,ha='right',va='top',fontsize=8)
     b.axvline(0,c='#4E5964',ls='--',lw=.9)
-    b.set(xlabel='Adaptive − random MAE',ylabel='Patients',ylim=(0,max(1,b.get_ylim()[1])*1.08))
-    fig.text(.64,.455,'Negative favors adaptive;\npositive favors random',fontsize=7.8)
+    b.set(xlabel='Adaptive − random MAE\nNegative favors adaptive',ylabel='Patients',ylim=(0,max(1,b.get_ylim()[1])*1.08))
     panel(c,'C','Ridge versus its own training-mean constant')
     f=patient_average(data['fidelity'],['novel_mae','constant_baseline_novel_mae'])
     counts=[]
@@ -40,7 +39,7 @@ def fidelity_figure(data,pilot,output):
     c.set(yticks=[0,1],yticklabels=['Random','Adaptive'],xlabel='Constant MAE − Ridge MAE',ylim=(1.48,-.48))
     c.spines['left'].set_visible(False);c.tick_params(axis='y',length=0)
     fig.text(.17,.025,'; '.join(counts).replace(' patients favor Ridge','')+' favor Ridge.\nPositive values favor Ridge over its constant baseline.',fontsize=7.7)
-    fig.text(.14,.95,f"{data['n']} planned patients · {len(p)} with all primary seed pairs",fontsize=9.3,weight='bold')
+    fig.text(.14,.95,f"{data['n']} patients · paired primary metrics for {len(p)}",fontsize=9.3,weight='bold')
     fig.text(.14,.91,'Patient means over three seeds; diamonds show means.',fontsize=8)
     save(fig,output,'figure4_fidelity')
     return (f'Probability fidelity in the primary population ({data["n"]} planned patients; {len(p)} with complete paired seed metrics). '
