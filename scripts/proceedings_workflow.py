@@ -23,8 +23,10 @@ def workflow(output):
         ax.add_patch(FancyArrowPatch((x1,y1),(x2,y2),arrowstyle="-|>",mutation_scale=8,
                                     linewidth=.8,color="#555555"))
     def heading(y,letter,text):
-        ax.text(.1,y,letter,fontsize=11,weight="bold",va="top")
-        ax.text(.6,y,text,fontsize=9,weight="bold",va="top")
+        ax.text(.1,y,letter,fontsize=11,weight="bold",va="top",zorder=10,
+                bbox=dict(facecolor='white',edgecolor='none',pad=1))
+        ax.text(.6,y,text,fontsize=9,weight="bold",va="top",zorder=10,
+                bbox=dict(facecolor='white',edgecolor='none',pad=1))
     heading(11.9,"A","Patient image sets and model-predicted image pools")
     box(.2,10.35,2.4,.9,"One patient's\nultrasound image set")
     box(3.2,10.35,2.9,.9,"Grouped-image GNN\nDenseNet121 + GAT")
@@ -37,12 +39,12 @@ def workflow(output):
     heading(8.55,"B","Perturbation distributions: 1,000 training rows per arm")
     box(.2,6.1,4.1,1.85,"Random arm\nSubset size uniform from 3 to n\nImages sampled without replacement\nDuplicates retained as fresh queries",COLORS['random'])
     box(4.9,6.1,4.8,1.85,"Adaptive arm\nI: random until a class quota is reached\nII: intended 85/15 pool-biased draws\nPool deficits reallocated; one-pool fallback",COLORS['adaptive'])
-    ax.text(7.3,5.65,"Requested 50/50 predictions;\nattainment is measured.",fontsize=7.5,ha="center",linespacing=1.2)
+    ax.text(7.3,5.65,"Requested 50/50 predictions;\nattainment is measured.",fontsize=7.5,ha="center",va="center",linespacing=1.2)
     arrow(8.2,8.95,8.2,8.05)
     heading(5.25,"C","Binary design matrix and matched GNN responses")
     box(.2,3.6,4.1,1.05,"U: rows = sampled subsets\ncolumns = image inclusion (0 / 1)")
     box(4.9,3.6,4.8,1.05,"For every row: rebuild the graph\nGNN response = class-1 probability")
-    arrow(2.2,6.05,2.2,4.7);arrow(7.3,5.55,7.3,4.7);arrow(4.35,4.1,4.85,4.1)
+    arrow(2.2,6.05,2.2,4.7);arrow(7.3,5.33,7.3,4.7);arrow(4.35,4.1,4.85,4.1)
     heading(3.15,"D","Conditional and marginal model-output associations")
     box(.2,1.7,3,.9,"Fixed-alpha Ridge\nprobability regression",COLORS['ridge'])
     box(3.5,1.7,3,.9,"Elastic Net regression\ntraining-only 5-fold CV",COLORS['elastic_net'])

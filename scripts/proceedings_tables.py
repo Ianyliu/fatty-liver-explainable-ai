@@ -152,8 +152,9 @@ def export_tables(main, pilot, output):
         g=pools[np.isclose(pools.requested_positive_proportion,prop)] if len(pools) else pools
         realized=g.groupby(["patient_index","seed"]).realized_positive_fraction.mean() if len(g) else pd.Series(dtype=float)
         patient_realized=realized.groupby(level='patient_index').mean() if len(realized) else pd.Series(dtype=float)
+        count=len(patient_realized)
         rows.append((f"Intended {int(prop*100)}/{int((1-prop)*100+.1)} pool ratio: realized positive fraction","N/A",
-                     number(patient_realized.mean())+f" ({len(patient_realized)} patients)"))
+                     number(patient_realized.mean())+f" ({count} {'patient' if count==1 else 'patients'})"))
     table("sampling", "Sampling feasibility and realized behavior. Pool ratios concern singleton-predicted image classes, not observed disease labels or guaranteed subset predictions. Pool-composition means first average available runs within patient, then patients within each requested-ratio stratum.",
           ["Diagnostic", "Random", "Adaptive"],rows,
           "Validated binary-design SVD and exact reconstruction of adaptive stage/pool clamping; duplicates = rows minus unique masks")
