@@ -1,51 +1,51 @@
-"""Paired probability-fidelity diagnostics, with a labeled pilot-only panel."""
+"""Primary paired fidelity, paired changes and exact constant-baseline comparisons."""
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
-from proceedings_data import ARMS, patient_average
-from proceedings_style import COLORS, MARKERS, LABELS, configure, panel, save
+from proceedings_data import ARMS,patient_average
+from proceedings_style import COLORS,MARKERS,LABELS,configure,panel,save
 
 
 def fidelity_figure(data,pilot,output):
-    configure();fig,axes=plt.subplots(2,2,figsize=(5.5,5.0))
-    fig.subplots_adjust(left=.12,right=.97,bottom=.12,top=.91,wspace=.48,hspace=.68)
+    configure();fig=plt.figure(figsize=(5.5,4.9))
+    a=fig.add_axes([.14,.55,.34,.31]);b=fig.add_axes([.64,.55,.32,.31]);c=fig.add_axes([.17,.15,.77,.22])
     p=data['patients'];p=p[p.primary_available]
-    ax=axes[0,0];panel(ax,'A','Paired patient fidelity')
-    for row in p.itertuples():
-        ax.plot([0,1],[row.random_mean_novel_mae,row.adaptive_mean_novel_mae],c='#999999',alpha=.38,lw=.6)
+    panel(a,'A','Paired patient fidelity')
+    for row in p.itertuples():a.plot([0,1],[row.random_mean_novel_mae,row.adaptive_mean_novel_mae],c='#AFBBC7',lw=.6,alpha=.38)
     for arm in ARMS:
-        ax.scatter(np.full(len(p),ARMS.index(arm)),p[arm+'_mean_novel_mae'],c=COLORS[arm],marker=MARKERS[arm],s=13,alpha=.8)
+        v=p[arm+'_mean_novel_mae'];j=ARMS.index(arm)
+        a.scatter(np.full(len(v),j),v,s=15,c=COLORS[arm],marker=MARKERS[arm],alpha=.7)
+        a.scatter([j],[v.mean()],s=47,c=COLORS[arm],marker='D',edgecolor='white',linewidth=.8,zorder=5)
     high=max(.01,p[['random_mean_novel_mae','adaptive_mean_novel_mae']].max().max()*1.12)
-    ax.set(xticks=[0,1],xticklabels=['Random','Adaptive'],ylabel='Novel-mask MAE',ylim=(0,high),xlim=(-.25,1.25))
-    ax=axes[0,1];panel(ax,'B','Paired MAE difference')
-    values=np.sort(p.paired_adaptive_minus_random_mae)
-    ax.axvline(0,c='#555555',ls='--',lw=.8)
-    ax.scatter(values,np.arange(1,len(values)+1),s=13,c='#333333')
-    ax.set(xlabel='Adaptive − random MAE',ylabel='Ordered patient',ylim=(0,len(values)+1))
-    ax.yaxis.set_major_locator(MaxNLocator(integer=True,nbins=5))
-    ax.text(.02,.98,'<0 favors adaptive',va='top',fontsize=7,transform=ax.transAxes)
-    ax=axes[1,0];panel(ax,'C','Own training-mean baseline')
+    a.set(xticks=[0,1],xticklabels=['Random','Adaptive'],ylabel='Shared-novel MAE',ylim=(0,high),xlim=(-.28,1.28))
+    panel(b,'B','Paired MAE changes')
+    values=p.paired_adaptive_minus_random_mae.to_numpy()
+    if len(values):
+        bins=np.histogram_bin_edges(values,bins=min(15,max(5,int(np.sqrt(len(values))))))
+        counts,edges=np.histogram(values,bins=bins)
+        b.bar(edges[:-1],counts,width=np.diff(edges)*.94,align='edge',color='#577DA8',ec='white',lw=.4)
+        b.axvline(values.mean(),c='#20262D',lw=1.2,ls=':')
+        b.text(.96,.95,f'Mean {values.mean():+.4f}',transform=b.transAxes,ha='right',va='top',fontsize=8)
+    b.axvline(0,c='#4E5964',ls='--',lw=.9)
+    b.set(xlabel='Adaptive − random MAE',ylabel='Patients',ylim=(0,max(1,b.get_ylim()[1])*1.08))
+    fig.text(.64,.455,'Negative favors adaptive;\npositive favors random',fontsize=7.8)
+    panel(c,'C','Ridge versus its own training-mean constant')
     f=patient_average(data['fidelity'],['novel_mae','constant_baseline_novel_mae'])
-    high=max(.01,f[['novel_mae','constant_baseline_novel_mae']].max().max()*1.08)
-    ax.plot([0,high],[0,high],c=COLORS['reference'],ls='--',lw=.8)
+    counts=[]
     for arm in ARMS:
-        g=f[f.arm==arm]
-        ax.scatter(g.constant_baseline_novel_mae,g.novel_mae,s=13,c=COLORS[arm],marker=MARKERS[arm],alpha=.75,label=LABELS[arm])
-    ax.set(xlabel='Constant-baseline MAE',ylabel='Ridge MAE',xlim=(0,high),ylim=(0,high))
-    ax.text(.04,.96,'Below diagonal: Ridge better',va='top',fontsize=7,transform=ax.transAxes)
-    ax=axes[1,1];panel(ax,'D','Elastic Net: pilot only (n=10)')
-    e=patient_average(pilot['enet'],['novel_mae'],('patient_index','arm','method'))
-    for arm in ARMS:
-        g=e[e.arm==arm].pivot(index='patient_index',columns='method',values='novel_mae')
-        delta=g.elastic_net-g.ridge
-        ax.scatter(np.full(len(g),ARMS.index(arm))+np.linspace(-.07,.07,len(g)),delta,s=15,c=COLORS[arm],marker=MARKERS[arm])
-        ax.plot([ARMS.index(arm)-.18,ARMS.index(arm)+.18],[delta.mean()]*2,c='#222222',lw=1.5)
-    ax.axhline(0,c=COLORS['reference'],ls='--',lw=.8)
-    ax.set(xticks=[0,1],xticklabels=['Random','Adaptive'],ylabel='Elastic Net − Ridge MAE',xlim=(-.45,1.45))
-    fig.suptitle(f"Primary population: {data['n']} patients · {len(p)} with all primary seed pairs",fontsize=9,y=.995)
-    save(fig,output,'figure3_fidelity')
-    return (f'A–C, primary population ({data["n"]} planned patients; {len(p)} with all primary seed pairs). '
-        'A, lines join patient means across three seeds. B, patient adaptive-minus-random MAE; zero denotes equal error and negative values favor adaptive. '
-        'C, each arm’s fixed training-mean constant versus its Ridge error on identical shared-novel evaluation rows; below the identity line favors Ridge. '
-        'D, ten-patient pilot only: paired Elastic Net-minus-Ridge MAE, with training-only five-fold selection. '
-        'Points represent patients, horizontal bars their means. Lower MAE is better; no inferential intervals are shown.')
+        g=f[f.arm==arm];v=(g.constant_baseline_novel_mae-g.novel_mae).dropna();j=ARMS.index(arm)
+        c.scatter(v,np.full(len(v),j)+np.linspace(-.12,.12,len(v)),s=15,c=COLORS[arm],marker=MARKERS[arm],alpha=.65,zorder=3)
+        if len(v):c.scatter([v.mean()],[j],s=46,c=COLORS[arm],marker='D',edgecolor='white',linewidth=.8,zorder=5)
+        counts.append(f'{LABELS[arm]}: {int((v>0).sum())}/{len(v)} patients favor Ridge')
+    c.axvline(0,c='#555F69',ls='--',lw=.9)
+    c.set(yticks=[0,1],yticklabels=['Random','Adaptive'],xlabel='Constant MAE − Ridge MAE',ylim=(1.48,-.48))
+    c.spines['left'].set_visible(False);c.tick_params(axis='y',length=0)
+    fig.text(.17,.025,'; '.join(counts).replace(' patients favor Ridge','')+' favor Ridge.\nPositive values favor Ridge over its constant baseline.',fontsize=7.7)
+    fig.text(.14,.95,f"{data['n']} planned patients · {len(p)} with all primary seed pairs",fontsize=9.3,weight='bold')
+    fig.text(.14,.91,'Patient means over three seeds; diamonds show means.',fontsize=8)
+    save(fig,output,'figure4_fidelity')
+    return (f'Probability fidelity in the primary population ({data["n"]} planned patients; {len(p)} with complete paired seed metrics). '
+        'A, three-seed patient means connected across random and adaptive training; lower shared-novel MAE is better. '
+        'B, the distribution of patient paired adaptive-minus-random MAE, with zero indicating equal error and a dotted line indicating the mean. '
+        'C, each arm’s own training-mean-probability constant baseline minus Ridge MAE on exactly the same shared-novel rows. '
+        'Positive values favor Ridge over its baseline. Points represent available patient means and diamonds their means; counts are stated. '
+        'No confidence intervals or significance tests are shown. Elastic Net comparisons are restricted to the ten-patient supplementary analysis.')
