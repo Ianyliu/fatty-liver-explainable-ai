@@ -10,8 +10,8 @@ The clean author-review and candidate PDFs have no internal-review banner or eng
 
 Figures are generated with Python/Matplotlib at a 5.5-inch manuscript width, with vector PDF/SVG and 300-dpi PNG exports:
 
-1. **Original workflow adaptation:** ultrasound artwork decoded from the recovered editable draw.io source; patient sets, singleton inference/pools, two sampling stages, subset imagery, binary design, actual DenseNet/GAT/MLP/mean-pooling architecture, and explanation branches. Correct current regression labels replace historical classifier/CV claims. The unmodified PNG and draw.io remain supplementary.
-2. **Actual image-influence example:** twenty cropped views aligned with saved Pearson, Ridge and Elastic Net estimates, averaged over three seeds under random sampling. Selection is the first patient in frozen pilot order with nonconstant explanation vectors for all methods/arms/seeds, rather than selection on fidelity or deletion success. I01–I20 replace private image identifiers. Correlation and coefficient scales differ; no significance fading or intervals are shown.
+1. **Original README workflow:** restored unchanged as main Figure 1, preserving the author's layout, artwork, colors, model architecture and arrows. The caption qualifies historical classifier/ten-fold-CV/physician-evaluation labels against current probability regression, fixed-alpha Ridge, five-fold Elastic Net and proposed physician assessment. The PNG and editable draw.io remain preserved.
+2. **README-style image-influence results:** signed vertical cyan/coral bars with corresponding grayscale ultrasound thumbnails beside the bar ends, matching the visual language of the three original example plots. Current validated three-seed Pearson/Elastic Net/Ridge estimates replace historical numbers. All three panels share twenty images sorted by Pearson mean; I01–I20 are anonymous display labels. No unvalidated error bars or faded significance coding are shown. The three unmodified README result images are preserved privately as historical source references with URL/SHA-256 provenance.
 3. **Sampling:** paired achieved prediction proportions and patient-level distributions of pool reallocation and duplicate masks. Target attainment is annotated.
 4. **Fidelity:** paired patient MAE, adaptive-minus-random differences and exact arm-specific training-mean constant comparisons.
 5. **Deletion:** control trajectories on one patient's actual deletion grid and paired patient-level descending-minus-random raw AUC. Normalized-AUC correlation does not occupy a main panel.
@@ -39,12 +39,12 @@ No full-cohort result is included before complete validation. The full build rej
 
 ## Private deliverables
 
-The revised pilot package is `outputs/proceedings_2026/pilot-revision-20261008-v2/`. Version v1 remains preserved and its fidelity-label overlap was corrected in v2. The original review package remains at `outputs/proceedings_2026/pilot-review-20261008-final/` for comparison. The final build and separate visual-QA record confirm a 15-page, nonsecured letter-size PDF, embedded Times New Roman, resolved citations, no overfull text boxes and no private identifiers detected in extracted text. The rendered figures/pages were inspected; this is agent QA, not author approval.
+The revised pilot package is `outputs/proceedings_2026/pilot-original-figures-20261008-v1/`. Earlier revision packages remain preserved. The original review package remains at `outputs/proceedings_2026/pilot-review-20261008-final/` for comparison. The new build restores the original workflow and README plot style; consult its PDF/build/visual-QA records. Earlier revision QA remains specific to those earlier PDFs.
 
 - `manuscript_review.pdf` and `manuscript_candidate.pdf`: clean private scientific copies, pending declarations and approval.
 - `latex/`: manuscript source, bibliography, generated macros, CSV/TeX tables and all figure exports.
 - `latex/figures/contact_sheet.pdf`: revised figures together.
-- `comparisons/workflow_original_vs_revised.pdf`: original and adapted main workflow.
+- `comparisons/workflow_original_vs_revised.pdf`: original and restored main workflow.
 - `comparisons/contact_sheet_before_after.pdf`: previous and revised figure presentation.
 - `abstract_original_vs_revised.md`: exact accepted abstract, populated revised abstract and substantive change notes.
 - `author_confirmation_checklist.md`: remaining author facts, image permissions and approval requirements.
