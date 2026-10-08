@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "release_status": "internal_review_only",
+  "author_order": ["Ian Liu", "Tso-Jung Yen"],
+  "confirmations": {
+    "ian_final_review": false,
+    "yen_opportunity_to_approve": false,
+    "author_order": false,
+    "ian_affiliation": false,
+    "yen_current_affiliation": false,
+    "correspondence": false,
+    "contributions": false,
+    "funding": false,
+    "competing_interests_both_authors": false,
+    "secondary_analysis_authorization": false,
+    "data_access_statement": false,
+    "code_availability_statement": false,
+    "ai_disclosure": false,
+    "workflow_publication_permission": false,
+    "times_new_roman_or_asa_exception": false
+  },
+  "note": "Change confirmations only on actual author evidence. This file does not authorize publication."
+}

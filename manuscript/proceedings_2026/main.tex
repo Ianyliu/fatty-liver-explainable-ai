@@ -1,0 +1,26 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[top=1in,bottom=1in,left=1.5in,right=1.5in]{geometry}
+\usepackage{fontspec}
+\IfFontExistsTF{Times New Roman}{\setmainfont{Times New Roman}}{\setmainfont{Nimbus Roman}}
+\usepackage{amsmath,amssymb,graphicx,booktabs,tabularx,longtable,array}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage[round,authoryear]{natbib}
+\usepackage[hidelinks]{hyperref}
+\usepackage{float}
+\frenchspacing
+\setlength{\parindent}{1em}
+\setlength{\parskip}{0.25em}
+\newcommand{\pending}[1]{\textbf{[AUTHOR CONFIRMATION: #1]}}
+\input{generated/results.tex}
+\title{Explainable Disease Classification via Multi-Ultrasound Images using Graph Neural Networks}
+\author{Ian Liu\thanks{Affiliation and correspondence require author confirmation.}\and Tso-Jung Yen\thanks{Institute of Statistical Science, Academia Sinica, Taipei, Taiwan; current affiliation and correspondence require confirmation.}}
+\date{JSM 2026 Proceedings --- Internal review draft}
+\begin{document}
+\maketitle
+\begin{center}\small\textbf{Internal review only.} \BuildPopulation.\\Author declarations and final typography remain subject to confirmation.\end{center}
+\input{body.tex}
+\bibliographystyle{plainnat}
+\bibliography{references}
+\appendix
+\input{appendix.tex}
+\end{document}
