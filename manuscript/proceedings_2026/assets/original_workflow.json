@@ -1,0 +1,13 @@
+{
+  "source_url": "https://github.com/user-attachments/assets/7583f3b0-f4e1-4042-b206-ca105c4656b2",
+  "user_supplied_url": "https://private-user-images.githubusercontent.com/37123262/356076767-7583f3b0-f4e1-4042-b206-ca105c4656b2.png",
+  "sha256": "5974a4376b5e40874bb1436a92cfe3158263f1b796576ce0edc9db3a16d367a9",
+  "dimensions": [
+    2908,
+    1655
+  ],
+  "retrieved_date": "2026-10-08",
+  "editable_original_search": "No drawio/SVG/vector workflow found in tracked sources or local historical archive.",
+  "adaptation": "scripts/proceedings_workflow.py follows the original topology and explicitly changes historical classifier/CV and physician-evaluation claims.",
+  "public_release": "Requires author review; retained original is historical supplementary material, not validation evidence."
+}
