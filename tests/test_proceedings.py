@@ -11,11 +11,25 @@ import pandas as pd
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 from proceedings_data import finite_correlation, full_gate, patient_average, strict_mean
-from proceedings_tables import stability_patient
+from proceedings_tables import balance_comparison, stability_patient
 from build_proceedings import check_references, release_gate
 
 
 class ProceedingsReportingTests(unittest.TestCase):
+    def test_balance_distance_is_taken_after_patient_seed_mean(self):
+        frame=pd.DataFrame([{'patient_index':0,'arm':arm,'seed':s,'positive_fraction':v}
+            for arm,values in [('random',[.1,.9,.9]),('adaptive',[.3,.3,.3])]
+            for s,v in enumerate(values)])
+        comparison=balance_comparison(frame)
+        self.assertEqual(comparison,{'adaptive_closer_patients':0,
+                                    'random_closer_patients':1,'equal_distance_patients':0})
+
+    def test_balance_comparison_rejects_unpaired_patients(self):
+        frame=pd.DataFrame([{'patient_index':p,'arm':arm,'seed':s,'positive_fraction':.8}
+            for p,arm in [(0,'random'),(0,'adaptive'),(1,'random')] for s in (0,1,2)])
+        with self.assertRaisesRegex(ValueError,'Incomplete patient pairs'):
+            balance_comparison(frame)
+
     def test_seed_means_then_equal_patient_weight(self):
         frame=pd.DataFrame([{'patient_index':p,'arm':'random','seed':s,'mae':v,'mask_count':100 if p else 1}
             for p,values in [(0,[.1,.2,.3]),(1,[10.,20.,30.])] for s,v in enumerate(values)])

@@ -29,6 +29,18 @@ def stability_patient(frame):
     return pd.DataFrame(result)
 
 
+def balance_comparison(design):
+    """Compare distance to 50/50 after averaging all three seeds within patient."""
+    means = patient_average(design, ['positive_fraction'])
+    paired = means.pivot(index='patient_index', columns='arm', values='positive_fraction')
+    if paired.isna().any().any():
+        raise ValueError('Incomplete patient pairs for class-balance comparison')
+    distance = (paired - .5).abs()
+    return {'adaptive_closer_patients': int((distance.adaptive < distance.random).sum()),
+            'random_closer_patients': int((distance.random < distance.adaptive).sum()),
+            'equal_distance_patients': int((distance.random == distance.adaptive).sum())}
+
+
 def summarize(data):
     f = patient_average(data["fidelity"], ["novel_mae", "constant_baseline_novel_mae", "all_draws_mae"])
     d = patient_average(data["design"], ["positive_fraction", "duplicate_rows", "unique_masks", "centered_design_condition_number"])
@@ -51,7 +63,12 @@ def summarize(data):
         "novel_min": int(data["fidelity"].novel_rows.min()), "novel_max": int(data["fidelity"].novel_rows.max()),
         "one_class_evaluations": int(((data["fidelity"].query('arm == "random"').novel_negative_rows == 0)
                                      | (data["fidelity"].query('arm == "random"').novel_positive_rows == 0)).sum()),
+        "balance_comparison": balance_comparison(data['design']),
+        "query_counts": {key: int(value) for key, value in
+                         data['query_counts'].drop(columns=['patient_index', 'seed']).sum().items()},
         "arms": {}, "deletion": {}}
+    result['adaptive_extra_queries'] = (result['query_counts']['adaptive_singletons'] +
+                                       result['query_counts']['adaptive_validation'])
     for arm in ARMS:
         rows, design = f[f.arm == arm], d[d.arm == arm]
         raw = data["fidelity"][data["fidelity"].arm == arm]
@@ -63,6 +80,8 @@ def summarize(data):
             "better_than_constant_runs": int((raw.novel_mae < raw.constant_baseline_novel_mae).sum()),
             "all_draws_mae": strict_mean(rows.all_draws_mae),
             "positive_fraction": strict_mean(design.positive_fraction),
+            "both_prediction_classes_runs": int(((raw_design.positive_fraction > 0) &
+                                                  (raw_design.positive_fraction < 1)).sum()),
             "duplicate_fraction": strict_mean(design.duplicate_rows)/1000,
             "unique_masks_mean": strict_mean(design.unique_masks),
             "singular_designs": int(raw_design.centered_design_singular.sum()),
@@ -139,6 +158,7 @@ def export_tables(main, pilot, output):
     s=main["stages"]; pools=main["pool_rows"]
     rows=[("Requested positive-prediction proportion","0.5000","0.5000"),
           ("Achieved proportion (mean patient)",*[number(primary["arms"][a]["positive_fraction"]) for a in ARMS]),
+          ("Training sets with both predicted classes",*[f"{primary['arms'][a]['both_prediction_classes_runs']} / {runs}" for a in ARMS]),
           ("Unique masks / 1,000 (mean patient)",*[number(primary["arms"][a]["unique_masks_mean"],1) for a in ARMS]),
           ("Duplicate rows (%)",*[number(primary["arms"][a]["duplicate_fraction"]*100,2) for a in ARMS]),
           ("Rank-deficient centered designs",*[f"{primary['arms'][a]['singular_designs']} / {runs}" for a in ARMS]),
@@ -199,6 +219,8 @@ def export_tables(main, pilot, output):
           ["Pilot diagnostic", "Mean", "Defined / total"],rows,
           "Training-only CV probability regressions; complete-seed ranking stability; descriptive rank agreement with saved class-1 LOO effects", "pilot")
     entry("claims:primary", "All primary descriptive numerical claims", primary)
+    main['query_counts'].to_csv(output/'query_counts_by_seed.csv',index=False)
+    entry('queries:stages', 'Each preserved query ledger reconciles stage counts, masks and responses; shared evaluation and random-deletion calls counted once', primary['query_counts'])
     # Availability is part B of the fidelity table, keeping five numbered tables.
     counts_text=(output/'fidelity_counts.tex').read_text()
     counts_tabular=counts_text[counts_text.index(r'\begin{tabularx}'):counts_text.index(r'\end{tabularx}')+len(r'\end{tabularx}')]
@@ -233,8 +255,52 @@ def export_tables(main, pilot, output):
         "PilotAdaptiveEnetDelta":number(secondary['adaptive']['enet_minus_ridge_mae'],6,True),
         "RandomDeletionDelta":number(primary['deletion']['random']['descending_minus_random'],6,True),
         "AdaptiveDeletionDelta":number(primary['deletion']['adaptive']['descending_minus_random'],6,True)}
+    macros.update({
+        'BalanceCloser': str(primary['balance_comparison']['adaptive_closer_patients']),
+        'MAETies': str(primary['equal_mae']),
+        'PairedMedian': number(primary['paired_mae_dispersion']['median'],6,True),
+        'PairedQOne': number(primary['paired_mae_dispersion']['q1'],6),
+        'PairedQThree': number(primary['paired_mae_dispersion']['q3'],6),
+        'AdaptiveExtraQueries': f"{primary['adaptive_extra_queries']:,}",
+        'SingletonQueries': f"{primary['query_counts']['adaptive_singletons']:,}",
+        'ConstructorQueries': f"{primary['query_counts']['adaptive_validation']:,}",
+        'TrainingQueriesPerArm': f"{primary['query_counts']['random_training']:,}",
+        'DeficitPercent': number(100*primary['pool_deficit_rows']/primary['biased_rows'],2),
+        'FullMissingPatients': str(primary['primary_patients_unavailable']),
+    })
+    for arm in ARMS:
+        prefix=arm.capitalize(); values=primary['arms'][arm]
+        macros.update({prefix+'PositivePercent':number(100*values['positive_fraction'],2),
+                       prefix+'BothClasses':str(values['both_prediction_classes_runs']),
+                       prefix+'DuplicatePercent':number(100*values['duplicate_fraction'],2),
+                       prefix+'ConstantMAE':number(values['constant_mae'],6),
+                       prefix+'BeatsConstant':str(values['better_than_constant_patients']),
+                       prefix+'DeletionDescending':number(primary['deletion'][arm]['descending'],6),
+                       prefix+'DeletionAscending':number(primary['deletion'][arm]['ascending'],6),
+                       prefix+'DeletionRandom':number(primary['deletion'][arm]['random'],6),
+                       prefix+'DeletionBelowControl':str(primary['deletion'][arm]['descending_below_random_patients'])})
     (output/'results.tex').write_text('\n'.join('\\newcommand{\\'+k+'}{'+tex(v)+'}' for k,v in macros.items())+'\n')
     entry('macros:results','Every generated manuscript numerical macro',macros)
     (output/'metrics.json').write_text(json.dumps({'primary':primary,'pilot':pilot_metrics,'secondary':secondary},indent=2,allow_nan=False)+'\n')
+    comparisons=[]
+    for label, get in [
+        ('Patients',lambda m:m['patients']),('Patient–seed runs',lambda m:m['runs']),
+        ('Random class-1 proportion',lambda m:m['arms']['random']['positive_fraction']),
+        ('Adaptive class-1 proportion',lambda m:m['arms']['adaptive']['positive_fraction']),
+        ('Random Ridge MAE',lambda m:m['arms']['random']['mae']),
+        ('Adaptive Ridge MAE',lambda m:m['arms']['adaptive']['mae']),
+        ('Adaptive minus random MAE',lambda m:m['paired_mae']),
+        ('Patients favoring random',lambda m:m['random_better']),
+        ('Patients favoring adaptive',lambda m:m['adaptive_better']),
+        ('Equal-MAE patients',lambda m:m['equal_mae']),
+        ('Exact adaptive target successes',lambda m:m['target_successes']),
+        ('Random duplicate fraction',lambda m:m['arms']['random']['duplicate_fraction']),
+        ('Adaptive duplicate fraction',lambda m:m['arms']['adaptive']['duplicate_fraction']),
+        ('Random descending minus random AUC',lambda m:m['deletion']['random']['descending_minus_random']),
+        ('Adaptive descending minus random AUC',lambda m:m['deletion']['adaptive']['descending_minus_random']),
+        ('Primary model queries',lambda m:m['model_queries'])]:
+        comparisons.append({'Metric':label,'Full':get(primary),'Pilot':get(pilot_metrics)})
+    pd.DataFrame(comparisons).to_csv(output/'full_vs_pilot.csv',index=False)
+    entry('comparison:full_vs_pilot','Separate descriptive summaries; the full cohort includes the pilot and is not independent replication',comparisons)
     # The full build adds figure entries and source/build metadata before final export.
     return ledger, primary, pilot_metrics, secondary

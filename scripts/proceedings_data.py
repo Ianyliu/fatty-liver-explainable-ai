@@ -80,11 +80,13 @@ def finite_correlation(first, second):
 
 def collect(plan, plan_path, population):
     fidelity, deletion, trajectories, design, stages, pool_rows, sizes, evidence = [], [], [], [], [], [], [], []
+    query_counts = []
     total = 0
     for item in plan["patients"]:
         path = Path(item["plan"])
         child = study.verified_plan(path)
         full_cohort_study.check_settings(child)
+        require(child['patient'] == item['patient'], 'Patient identity differs from cohort plan')
         evidence.append(hash_entry(path))
         sizes.append(len(child["images"]))
         for seed in (0, 1, 2):
@@ -93,6 +95,8 @@ def collect(plan, plan_path, population):
             index = item["patient_index"]
             report = checked["report"]
             total += report["total_model_queries"]
+            query_counts.append(dict(patient_index=index, seed=seed,
+                                     **report['query_counts']))
             fidelity.extend(dict(patient_index=index, **row) for row in checked["fidelity"])
             deletion.extend(dict(patient_index=index, **row) for row in checked["deletion_summary"])
             # Export no masks or image IDs to plotting tables.
@@ -121,10 +125,17 @@ def collect(plan, plan_path, population):
     patients, aggregate = cohort_study.aggregate(fidelity, range(len(sizes)), (0, 1, 2))
     expected = 67410 if population == "pilot" else plan["planned_total_model_queries"]
     require(total == expected, "Unexpected aggregate GNN-call budget")
+    counts = pd.DataFrame(query_counts)
+    require(len(counts) == len(sizes)*3 and
+            not counts.duplicated(['patient_index', 'seed']).any(),
+            'Incomplete or duplicate patient–seed query records')
+    require(int(counts.drop(columns=['patient_index', 'seed']).to_numpy().sum()) == total,
+            'Stage-specific query counts do not reconcile with the total')
     return {"population": population, "n": len(sizes), "image_counts": sizes, "queries": total,
         "fidelity": pd.DataFrame(fidelity), "patients": pd.DataFrame(patients),
         "deletion": pd.DataFrame(deletion), "trajectories": pd.DataFrame(trajectories),
         "design": pd.DataFrame(design), "stages": pd.DataFrame(stages), "pool_rows": pd.DataFrame(pool_rows),
+        "query_counts": counts,
         "aggregate": aggregate, "evidence": [hash_entry(plan_path), *evidence]}
 
 
