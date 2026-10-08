@@ -164,6 +164,9 @@ def influence_profiles(plan,summary,output):
                         with Image.open(path) as thumbnail:
                             ax.imshow(thumbnail,cmap='gray',vmin=0,vmax=255,extent=(j-.36,j+.36,center-.07*span,center+.07*span),aspect='auto',zorder=4)
                     if valid.any():ax.set_ylim(min(0,values[valid].min())-.22*span,max(0,values[valid].max())+.22*span)
+                # imshow changes axis limits to its last thumbnail; preserve the
+                # full aligned image set in every panel.
+                ax.set_xlim(-.7,n-.3)
             fig.suptitle(f'Patient ordinal {index+1:03} · {LABELS[arm]} sampling · {n} images',fontsize=12,fontweight='bold')
             fig.text(.10,.945,'Pearson, Elastic Net and Ridge: means across three seeds. LOO: one seed-0 removal baseline.',fontsize=8)
             fig.text(.10,.025,'Private clinical-image review. I labels follow the frozen image order; panels share Pearson-sorted order.\nCyan: positive; coral: negative association. NA: undefined. No confidence intervals or significance coding.',fontsize=8)
