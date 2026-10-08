@@ -37,7 +37,7 @@ def workflow(output):
     heading(8.55,"B","Perturbation distributions: 1,000 training rows per arm")
     box(.2,6.1,4.1,1.85,"Random arm\nSubset size uniform from 3 to n\nImages sampled without replacement\nDuplicates retained as fresh queries",COLORS['random'])
     box(4.9,6.1,4.8,1.85,"Adaptive arm\nI: random until a class quota is reached\nII: intended 85/15 pool-biased draws\nPool deficits reallocated; one-pool fallback",COLORS['adaptive'])
-    ax.text(5.05,5.7,"Requested 50/50 predictions; attainment is measured.",fontsize=7.7)
+    ax.text(7.3,5.65,"Requested 50/50 predictions;\nattainment is measured.",fontsize=7.5,ha="center",linespacing=1.2)
     arrow(8.2,8.95,8.2,8.05)
     heading(5.25,"C","Binary design matrix and matched GNN responses")
     box(.2,3.6,4.1,1.05,"U: rows = sampled subsets\ncolumns = image inclusion (0 / 1)")
@@ -47,7 +47,7 @@ def workflow(output):
     box(.2,1.7,3,.9,"Fixed-alpha Ridge\nprobability regression",COLORS['ridge'])
     box(3.5,1.7,3,.9,"Elastic Net regression\ntraining-only 5-fold CV",COLORS['elastic_net'])
     box(6.8,1.7,2.9,.9,"Pearson inclusion–\nprobability correlation",COLORS['pearson'])
-    arrow(2.2,3.55,1.7,2.65);arrow(5.0,3.55,5.0,2.65);arrow(8.0,3.55,8.2,2.65)
+    arrow(1.7,2.95,1.7,2.65);arrow(5.0,2.95,5.0,2.65);arrow(8.2,2.95,8.2,2.65)
     ax.text(.2,1.12,"Evaluate: shared-novel fidelity, seed stability and node-deletion controls.",fontsize=8)
     ax.text(.2,.55,"Adapted from the author's original workflow. Historical classifier/10-fold CV,\nbootstrap inference and physician evaluation are not completed analyses here.",
             fontsize=7.5,va="center",linespacing=1.3)

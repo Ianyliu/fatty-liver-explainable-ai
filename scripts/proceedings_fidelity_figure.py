@@ -1,6 +1,7 @@
 """Paired probability-fidelity diagnostics, with a labeled pilot-only panel."""
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 from proceedings_data import ARMS, patient_average
 from proceedings_style import COLORS, MARKERS, LABELS, configure, panel, save
 
@@ -21,6 +22,7 @@ def fidelity_figure(data,pilot,output):
     ax.axvline(0,c='#555555',ls='--',lw=.8)
     ax.scatter(values,np.arange(1,len(values)+1),s=13,c='#333333')
     ax.set(xlabel='Adaptive − random MAE',ylabel='Ordered patient',ylim=(0,len(values)+1))
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True,nbins=5))
     ax.text(.02,.98,'<0 favors adaptive',va='top',fontsize=7,transform=ax.transAxes)
     ax=axes[1,0];panel(ax,'C','Own training-mean baseline')
     f=patient_average(data['fidelity'],['novel_mae','constant_baseline_novel_mae'])
