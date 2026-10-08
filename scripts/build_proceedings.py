@@ -113,7 +113,7 @@ def historical_workflow(output):
 def build(args):
     os.environ.setdefault('MPLCONFIGDIR',str(ROOT/'outputs/proceedings_2026/.matplotlib'))
     from threadpoolctl import threadpool_limits
-    from proceedings_data import FULL, hash_entry, load_full, load_pilot
+    from proceedings_data import FULL, hash_entry, load_full, load_pilot, verify_entries
     from proceedings_tables import export_tables, tex
     from proceedings_workflow import workflow,workflow_comparison
     from proceedings_influence_figure import influence_figure
@@ -127,6 +127,10 @@ def build(args):
     allowed=(ROOT/'outputs/proceedings_2026').resolve()
     if allowed not in output.parents or output.exists():
         raise ValueError('Use a NEW directory below ignored outputs/proceedings_2026/')
+    publication_sources=[*sorted((ROOT/'scripts').glob('proceedings_*.py')),Path(__file__).resolve()]
+    source_files=[p for p in SOURCE.rglob('*') if p.is_file()]+publication_sources
+    source_start=[hash_entry(p) for p in source_files]
+    source_commit=command(['git','rev-parse','HEAD'],ROOT).strip()
     references=check_references()
     if args.submission_pdf:release_gate()
     # Crucially, validate full completeness before creating a directory or building any pilot assets.
@@ -156,6 +160,25 @@ def build(args):
         main_text=main_text.replace(r'\author{Ian Liu\and Tso-Jung Yen}',author)
         (work/'main.tex').write_text(main_text)
     ledger,metrics,pilot_metrics,secondary=export_tables(main,pilot,generated)
+    coverage=main['query_counts'].groupby('patient_index').seed.agg(list)
+    reconciliation={'status':'passed','population':args.phase,'patients':main['n'],
+        'patient_seed_records':len(main['query_counts']),
+        'seeds':[0,1,2],'all_patient_seed_sets_complete':bool(coverage.apply(lambda s:sorted(s)==[0,1,2]).all()),
+        'primary_patients_available':metrics['primary_patients_available'],
+        'primary_patients_unavailable':metrics['primary_patients_unavailable'],
+        'total_model_queries':main['queries'],'query_counts_by_stage':metrics['query_counts'],
+        'raw_checks':['frozen source/input hashes and cohort membership','patient and RNG seed identities',
+                      'ledger budgets, masks, probabilities, logits and graph edges',
+                      'training matrices, saved coefficients and evaluation predictions',
+                      'shared-novel membership and recomputed probability errors',
+                      'deletion ordering, actual fractions and recomputed trapezoidal AUC'],
+        'validation_note':'All primary saved runs reconciled; independent model refits and CV-selection verification are pilot-only.',
+        'new_inference_queries':0}
+    if args.phase=='full':
+        reconciliation.update(expansion_runs=375,reused_pilot_runs=30,
+            full_plan=hash_entry(args.full_plan),
+            validated_summary=hash_entry(args.full_plan.parent/'summary/analysis.json'))
+    (output/'validation_reconciliation.json').write_text(json.dumps(reconciliation,indent=2)+'\n')
     workflow(figures)
     influence_caption,original_result_sources=original_results(figures)
     current_influence_caption,example=influence_figure(pilot,figures)
@@ -283,7 +306,6 @@ def build(args):
                     'full-cohort Elastic Net, Pearson, stability and leave-one-image-out',
                     'bootstrap inference, significance testing, physician validation and clustering ablations']}
     (output/'analysis_status.json').write_text(json.dumps(status_record,indent=2)+'\n')
-    publication_sources=[*sorted((ROOT/'scripts').glob('proceedings_*.py')),Path(__file__).resolve()]
     for path in publication_sources:
         destination=output/'source_snapshot/scripts'/path.name;destination.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(path,destination)
     commands=[['xelatex','-interaction=nonstopmode','-halt-on-error','main.tex'],['bibtex','main'],
@@ -321,15 +343,15 @@ def build(args):
         'submission_ready':bool(args.submission_pdf),
         'release_status':'approved_for_submission_pdf' if args.submission_pdf else 'internal_review_only'}
     (output/'pdf_qa.json').write_text(json.dumps(qa,indent=2)+'\n')
-    source_files=[p for p in SOURCE.rglob('*') if p.is_file()]+publication_sources
+    verify_entries(source_start)
     manifest={'schema':1,'phase':args.phase,'created_at':datetime.now(timezone.utc).isoformat(),
         'status':'review_package_built','analysis_patients':main['n'],'validated_runs':main['n']*3,
-        'model_queries':main['queries'],'new_inference_queries':0,'git_commit':command(['git','rev-parse','HEAD'],ROOT).strip(),
-        'sources':[hash_entry(p) for p in source_files], 'typesetting_font':font_record,
+        'model_queries':main['queries'],'new_inference_queries':0,'git_commit':source_commit,
+        'sources':source_start, 'typesetting_font':font_record,
         'versions':{name:importlib.metadata.version(name) for name in ('numpy','pandas','scipy','scikit-learn','matplotlib','Pillow')},
         'reference_count':len(references['references']),'commands':commands,'release_gate':'No public release without Ian review and Prof. Yen approval opportunity.'}
     manifest['artifacts']=[hash_entry(p) for p in [target,candidate,output/'evidence_ledger.json',output/'abstract_original_vs_revised.md',output/'author_confirmation_checklist.md',
-        output/'author_statement_proposals.md',output/'submission_requirements.json',
+        output/'author_statement_proposals.md',output/'submission_requirements.json',output/'validation_reconciliation.json',
         *sorted(generated.glob('*.csv')),*sorted(figures.glob('*.csv')),*sorted(figures.glob('*.pdf')),*sorted(figures.glob('*.svg')),*sorted(figures.glob('*.png')),
         *sorted((output/'comparisons').glob('*'))]]
     (output/'build_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
