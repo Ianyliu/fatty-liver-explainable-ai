@@ -1,100 +1,99 @@
-# JSM 2026 proceedings implementation and review handoff
+# JSM 2026 proceedings: revised author-review package
 
-Updated October 8, 2026. **Private review only; no submission or public release is authorized.** Ian Liu must review the final manuscript and figures, and Tso-Jung Yen must have an opportunity to approve authorship and content. Author order is provisionally Ian Liu, Tso-Jung Yen.
+Updated October 8, 2026. Private review only. Ian Liu and Tso-Jung Yen remain the provisional authors in that order. No submission, public release, or author approval has occurred.
 
-## Critical path and status
+## Editorial and visual revision
 
-The ten-patient exploratory manuscript is built and is the fallback if the expansion cannot be validated in time. The internal target is October 9 at noon Eastern. Remaining critical work is complete-run validation, interpretation of the expanded results, author/declaration confirmation, required typography, and final PDF review. Optional visual refinements and new experiments must not delay a scientifically complete package.
+The revised manuscript retains the accepted title and the original research sequence: grouped-ultrasound GNN prediction, LIME-inspired image-subset perturbations, proposed two-stage Adaptive Class-Balanced Sampling, complementary conditional and marginal influence, and evaluation of those explanations. Fidelity and feasibility findings qualify the framework without replacing its motivation. The original accepted abstract is preserved verbatim in `manuscript/proceedings_2026/accepted_abstract.txt`, with the official program URL and source hash in the adjacent JSON. `abstract_revision_notes.md` explains necessary changes to classifier/CV/bootstrap claims, population, and conclusions.
 
-| Item | Status and evidence |
-| --- | --- |
-| Environment and migration | Existing uv environment, CPU/GPU smoke tests, image-transfer hashes and eligible-cohort coverage validated before the studies; no environment or inference changes made for publication. |
-| Ten-patient comparison | 30 completed patient–seed runs; independently validated raw tables, fits and deletion areas. |
-| Additional ten-patient analyses | Training-only Elastic Net CV, marginal Pearson rankings, seed stability and LOO completed; independent completion review refitted 60 Ridge and 60 Elastic Net models. |
-| Additional manuscript calculations | CPU-only centered-design diagnostics, exact pool composition reconstruction, and saved-ranking/LOO agreement; no new GNN calls. These are descriptive diagnostics, not a claim of a completed sensitivity study. |
-| Full eligible-cohort expansion | 135 patients, three seeds, 405 total runs including 30 reused pilot runs; 375 new GPU tasks in array **9558368**. Complete validation is pending. |
-| Full validation | CPU summary **9558371**, dependent on successful completion of array 9558368. |
-| Pilot report toolchain | CPU job **9560471** completed with exit 0:0; XeLaTeX/BibTeX, all figure/table exports and automated PDF checks passed on a compute node. |
-| Full report generation | CPU job **9560474**, dependent on successful completion of summary 9558371; no new inference or publication. |
-| Manuscript and presentation | Complete pilot draft, five generated numerical tables, five multi-panel figures, contact sheet, six verified references, evidence ledger, hashes and internal declaration placeholders. |
-| Release | Blocked pending final author review, declarations and Times New Roman or a documented ASA font exception. No paper was submitted or published. |
+The clean author-review and candidate PDFs have no internal-review banner or engineering status paragraph. Their content is identical until confirmed author information is supplied. Funding, competing interests, current secondary-use authorization and author affiliations are not invented. They must be supplied in `author_declarations.json` and incorporated before final approval; `author_confirmation_checklist.md` records the outstanding items separately. A candidate PDF is not evidence of submission eligibility or permission to release it.
 
-Scheduler completion is distinct from scientific validation. A full build requires all 405 preserved runs, all planned patients, matching plan/source/evidence hashes, and a passed summary. It rejects absent or incomplete validation before creating an output directory. It never substitutes partial aggregates or pilot estimates for full-cohort results.
+Figures are generated with Python/Matplotlib at a 5.5-inch manuscript width, with vector PDF/SVG and 300-dpi PNG exports:
 
-## Review package and source locations
+1. **Original workflow adaptation:** ultrasound artwork decoded from the recovered editable draw.io source; patient sets, singleton inference/pools, two sampling stages, subset imagery, binary design, actual DenseNet/GAT/MLP/mean-pooling architecture, and explanation branches. Correct current regression labels replace historical classifier/CV claims. The unmodified PNG and draw.io remain supplementary.
+2. **Actual image-influence example:** twenty cropped views aligned with saved Pearson, Ridge and Elastic Net estimates, averaged over three seeds under random sampling. Selection is the first patient in frozen pilot order with nonconstant explanation vectors for all methods/arms/seeds, rather than selection on fidelity or deletion success. I01–I20 replace private image identifiers. Correlation and coefficient scales differ; no significance fading or intervals are shown.
+3. **Sampling:** paired achieved prediction proportions and patient-level distributions of pool reallocation and duplicate masks. Target attainment is annotated.
+4. **Fidelity:** paired patient MAE, adaptive-minus-random differences and exact arm-specific training-mean constant comparisons.
+5. **Deletion:** control trajectories on one patient's actual deletion grid and paired patient-level descending-minus-random raw AUC. Normalized-AUC correlation does not occupy a main panel.
+6. **Supplementary pilot diagnostics:** compact method/metric similarity matrix with defined counts and Elastic Net-versus-Ridge differences. These are ten-patient analyses only.
 
-The completed private pilot package is `outputs/proceedings_2026/pilot-review-20261008-final/`. The preceding CPU-toolchain validation package remains preserved at `outputs/proceedings_2026/pilot-review-cpu-20261008-v1/`:
+The patient example and historical artwork contain clinical images. Ian authorized their use for private review on October 8. Publication eligibility remains unconfirmed, including for the adapted workflow. Do not publish the PDF, package or image derivatives until that issue is resolved. Visual inspection and extracted-text checks supplement, rather than establish, eligibility.
 
-- `manuscript_review.pdf`: nonsecured, letter-size review PDF.
-- `latex/`: copied LaTeX source, bibliography, generated numerical macros/CSV/TeX tables and figures.
-- `latex/figures/contact_sheet.{pdf,svg,png}`: all five figures together; individual figures have PDF/SVG and 300-dpi PNG exports at 5.5-inch manuscript width.
-- `supplementary/`: complete historical workflow PDF/SVG/PNG, original source PNG, recovered editable `.drawio` source and provenance.
-- `page_review/`: rendered manuscript pages for inspection. `review_validation.json` separately records the agent's visual review, release-gate checks and hashes for exported figures/tables; author approval is still pending.
-- `evidence_ledger.json`, `build_manifest.json`, `figure_captions.json`: definitions, validated sources, artifact hashes, commands and package versions.
-- `reference_verification.json`: canonical publication URLs, verified fields and access limitations.
-- `analysis_status.json`, `release_confirmations.json`, `pdf_qa.json`, `git_commits.txt`: completed/pending/deferred work, author checklist, automated checks and commits.
+## Current results and full-cohort dependency
 
-Full report job 9560474 will use a NEW directory, `outputs/proceedings_2026/full-review-cpu-20261008-v1/`. This is an expected path, not evidence that a full review PDF exists. Private launch configurations, configuration hashes, resources, submission commands/job IDs and execution receipts are in `outputs/proceedings_2026/jobs-20261008-v1/`. Logs are `logs/xai-jsm-review-{JOB_ID}.out`.
+The ten-patient pilot has 30 validated patient–seed runs. Independent completion review refitted 60 Ridge and 60 Elastic Net models and checked the selected training-only five-fold CV settings. Pearson rankings, seed stability and LOO are complete for these ten patients. Publication calculations reconstruct realized pool mixtures, centered-design conditioning and ranking/LOO agreement from preserved evidence; no new GNN inference is performed.
 
-Tracked manuscript sources are in `manuscript/proceedings_2026/`; plotting, numerical export and read-only validation are `scripts/proceedings_*.py`. The build entry point is `scripts/build_proceedings.py`. Scheduler execution uses `scripts/run_proceedings_review.py` and `slurm/proceedings_review.sbatch`. Publication source is selected and hashed at report-job execution, checked unchanged during that build, and copied into the package; inference plans remain frozen throughout.
+The pilot patient-mean shared-novel MAE is 0.067116 for random and 0.111150 for adaptive sampling, paired difference +0.044034; random has lower error in nine of ten patients. Adaptive achieves the requested 500/500 prediction balance in zero of 30 runs. These unfavorable results remain explicit. They are descriptive findings, with no bootstrap intervals, significance tests or physician-validation claims.
 
-The evidence ledger contains restricted source paths and must remain private. Neither a whole review package nor its raw input directories are a public code/data release. The final PDF contains aggregate results and ordinal patient indices, with automated extracted-text checks for private identifiers. The original workflow's illustrative images remain subject to author publication permission.
+The full study targets 135 eligible positive-label test09 patients with complete image availability, 3,072 images and three seeds per patient. It includes the pilot's 30 runs plus 375 new tasks, not an independent replication. Expansion followed inspection of the pilot; the analysis is exploratory.
 
-## Scientific boundaries
+| Job | Purpose | Live status at 12:16 p.m. Eastern, October 8 |
+| --- | --- | --- |
+| 9558368 | 375 new GPU patient–seed tasks, concurrency two | 333 completed, two running, 40 pending |
+| 9558371 | Complete raw-evidence validation summary | Pending successful array completion |
+| 9560474 | Full private manuscript/figures build | Pending successful validation summary |
 
-This paper evaluates the perturbation distribution's effect on probability-surrogate fidelity, sampling feasibility and explanation repeatability. The poster narrative is retained with explicit historical/current distinctions. The expansion followed inspection of the convenience pilot, includes those patients, and is exploratory rather than preregistered or an independent replication.
+Snapshot and raw scheduler rows: `outputs/proceedings_2026/jobs-20261008-v1/revision_status.json`. Recent 20 completed tasks averaged about 560 seconds. With two concurrent tasks, approximately 3–4 hours of inference remained at that snapshot, subject to preemption and queue availability. A full-cohort review before October 9 noon Eastern appears feasible if completion and validation succeed; it is not guaranteed. The ASA submission page states October 9, without specifying a cutoff: https://ww2.amstat.org/meetings/jsm/2026/submissions.cfm.
 
-Both arms have 1,000 training draws, seeds 0/1/2 and 200 shared evaluation draws per patient–seed. Current Ridge uses alpha 1, an unpenalized intercept and unscaled binary columns; Elastic Net selection is shuffled five-fold training-only CV on the ten-patient cohort. Historical hard-label classifiers, ten-fold tuning, bootstrap intervals and physician validation are not current completed analyses. The GNN implementation uses a correlation threshold greater than 0.95; the source paper describes 0.995, and this discrepancy is stated explicitly.
+No full-cohort result is included before complete validation. The full build rejects absent/partial summaries and requires all 405 preserved runs and source/configuration consistency. The pending report job selects and hashes publication sources at execution, checks that they stay unchanged during its build, and preserves a source snapshot. Frozen inference inputs, checkpoints and running-job configurations are unchanged. No new experiments were launched for this revision.
 
-Primary MAE is on shared evaluation masks unseen in either training arm, retaining multiplicity. Each arm's constant baseline is its own training-mean probability. All three seed results are averaged within patients first; patients receive equal weight. Missing primary seed metrics make that patient's primary metric unavailable, and any missing patient makes the complete-cohort primary mean unavailable. Available-patient summaries are explicitly labeled. SD and other dispersion are descriptive, with no significance tests or confidence intervals.
+## Private deliverables
 
-Observed disease labels define positive-patient eligibility; singleton model predictions define image pools. Intended 85/15 mixtures are distinguished from achieved proportions, capacity clamping and reallocation, and target failures. Duplicates consume fresh calls; matched training-row budgets do not imply matched query costs. Deletion is a model-behavior intervention, using actual deletion fractions for raw trapezoidal AUC and signed coefficient rankings. It does not establish clinical or causal importance.
+The revised pilot package is `outputs/proceedings_2026/pilot-revision-20261008-v1/`. The original review package remains at `outputs/proceedings_2026/pilot-review-20261008-final/` for comparison. Inspect the new build and visual-QA records before treating any package as complete.
 
-## Figures, tables and bibliography
+- `manuscript_review.pdf` and `manuscript_candidate.pdf`: clean private scientific copies, pending declarations and approval.
+- `latex/`: manuscript source, bibliography, generated macros, CSV/TeX tables and all figure exports.
+- `latex/figures/contact_sheet.pdf`: revised figures together.
+- `comparisons/workflow_original_vs_revised.pdf`: original and adapted main workflow.
+- `comparisons/contact_sheet_before_after.pdf`: previous and revised figure presentation.
+- `abstract_original_vs_revised.md`: exact accepted abstract, populated revised abstract and substantive change notes.
+- `author_confirmation_checklist.md`: remaining author facts, image permissions and approval requirements.
+- `evidence_ledger.json`, `build_manifest.json`, `pdf_qa.json`, `review_validation.json`: scientific definitions, validated source hashes, artifact hashes, automated PDF checks and separate rendered-page review.
+- `reference_verification.json`, `git_commits.txt`: verified bibliography and source history.
+- `supplementary/`: historical original workflow and editable source.
 
-Figure 1 is adapted from the author's original workflow. The permanent GitHub asset was retrieved, preserved and hashed; its PNG contains an embedded editable draw.io diagram, which was recovered without altering the diagram. The full historical source accompanies the explicit current-method vector adaptation.
+Expected full output: `outputs/proceedings_2026/full-review-cpu-20261008-v1/`. This path alone is not evidence that a full manuscript exists. Report configuration/submission/execution receipts remain under `outputs/proceedings_2026/jobs-20261008-v1/`; logs are `logs/xai-jsm-review-{JOB_ID}.out`.
 
-Figures 2–4 use the primary build population for sampling feasibility, fidelity and deletion; Figure 3D and Figure 5 remain ten-patient only. Method/arm encodings use consistent navy, vermilion, teal, purple/slate and gray, with shapes and line styles as additional distinctions. Captions define populations, metrics, controls, units and direction. Illustrative deletion trajectories select a patient deterministically near the median paired deletion contrast and do not pool unequal grids.
+The evidence ledger and source paths are restricted. Do not publish the whole review archive or raw data/checkpoints. Public code availability must be distinguished from access to private inputs.
 
-Five numbered tables cover design/eligibility, paired fidelity and availability, sampling/design diagnostics, deletion controls, and ten-patient additional analyses. Values and manuscript macros are generated from validated evidence. The ledger records every table and primary/pilot numerical claim set; all source artifacts are hashed. No result is manually transcribed into manuscript prose.
+## Scientific and reproducibility boundaries
 
-The six included references are Yen et al. (2024), Ribeiro et al. (2016), Ying et al. (2019), Hoerl and Kennard (1970), Zou and Hastie (2005), and Lundberg and Lee (2017). Every BibTeX entry has an immediately preceding original-publication URL/DOI comment, and all citations resolve. Efron (1979) is omitted: current bootstrap inference is not performed, and original full-text bibliographic verification was incomplete. This omission does not block the paper.
+Patient-level summaries are primary: average all three seeds within patient, then weight patients equally. Missing seed metrics make a patient metric unavailable; any missing patient makes the complete-cohort primary mean unavailable, with available-patient summaries labeled separately. Dispersion is descriptive.
 
-## Deterministic regeneration and checks
+Each arm has 1,000 training draws and 200 shared independent evaluation draws per seed. Primary MAE uses masks seen in neither training arm, retaining multiplicity. Each constant is its arm's training-mean probability on exactly the same evaluation rows. Ridge is alpha-1 probability regression, unscaled indicators and an unpenalized intercept. Elastic Net is training-only shuffled five-fold CV in ten patients. Historical hard-label classifiers, ten-fold tuning, bootstrap intervals and physician evaluation are not current completed analyses.
 
-Use the validated environment directly; do not sync/relink it while inference jobs run. Output directories must be NEW and below ignored `outputs/proceedings_2026/`.
+Observed positive disease labels define cohort eligibility; singleton model predictions define pools. Intended 85/15 mixtures differ from achieved pool proportions and achieved subset predictions. Capacity clamping, reallocation, failed targets, duplicates and adaptive overhead are reported. Equal row budgets are not equal query budgets. Raw deletion AUC integrates actual patient-specific fractions; deletion evaluates model behavior, not clinical or causal image importance. The supplied model's feature-correlation threshold (>0.95) differs from the source paper's 0.995; the analysis concerns the supplied checkpoint and does not reproduce conformal-risk validation.
+
+Five numerical tables cover design, fidelity/baselines/availability, adaptive diagnostics, deletion controls, and pilot supplementary analyses. Numerical macros and tables are generated from validated artifacts and entered in the evidence ledger. Six verified references remain unchanged; every BibTeX entry retains its immediately preceding original-source URL comment. No unverified citations were added.
+
+## Build and checks
+
+Use the existing uv environment directly. Do not sync or relink it during inference. Every build requires a NEW output directory.
 
 ```bash
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 .venv/bin/python scripts/build_proceedings.py \
   --phase pilot --output outputs/proceedings_2026/pilot-review-NEW
 
-# Only after the full raw-evidence summary passes:
+# Only after complete full validation:
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 .venv/bin/python scripts/build_proceedings.py \
   --phase full --output outputs/proceedings_2026/full-review-NEW
 
 MPLCONFIGDIR=outputs/proceedings_2026/.matplotlib OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
-  .venv/bin/python -m unittest discover -s tests -v
+  .venv/bin/python -m unittest discover -s tests
 
-bash -n slurm/proceedings_review.sbatch
 squeue -j 9558368,9558371,9560474
 ```
 
-The current suite has **58 passing tests**. Reporting tests verify seed-before-patient averaging, missing-seed rejection, unavailable metrics, constant ranking handling, the full-run gate, bibliography resolution and blocked submission without author confirmation. Existing inference/sampling/transfer tests also pass. System tools are XeLaTeX, BibTeX, Fontconfig, Poppler (`pdftotext`, `pdfinfo`, `pdffonts`, `pdftoppm`) and the LaTeX packages listed in the package README. Python/Matplotlib is used consistently; R dependencies are unnecessary. No network retrieval or inference occurs during report builds.
+Dependencies: pinned existing NumPy/Pandas/SciPy/scikit-learn/Matplotlib/Pillow; XeLaTeX, BibTeX, fontspec, geometry, natbib, booktabs, tabularx, graphicx, Fontconfig and Poppler. R is unnecessary for the chosen implementation. Local Times New Roman regular/bold/italic/bold-italic files are verified by family and SHA-256 against `font_source.json`; the original package/license remain in ignored `outputs/proceedings_2026/fonts/`. Extracted font files are not redistributed. The build records the actual embedded family and never silently calls a substitute Times New Roman.
 
-Automated PDF QA confirms resolved citations, nonsecured letter-size output, no missing glyphs, no overfull text boxes and no detected patient identifiers in extracted text. This does not replace review of the rendered figures, image content, numerical interpretation or author declarations. The current environment substitutes Nimbus Roman for required Times New Roman; review PDFs are explicitly marked as such. Install a legitimately available Times New Roman font in an approved location or obtain a documented ASA exception before submission-ready output. Do not silently rename the substituted font.
+Reporting tests cover patient weighting, missingness, constant rankings, full-run completeness, bibliography resolution and author release gates. A new test verifies that checked approval boxes cannot replace missing declaration text. Automated PDF checks cover citations, glyphs, encryption, page size, identifiers and font embedding; manual visual review remains separate.
 
-`--submission-pdf` requires actual recorded author confirmations, removal of internal placeholders and review markings, final typography and explicit release status. It only builds a PDF and never submits or publishes. Missing declarations must not become statements of “none.”
+## Completion and release gate
 
-## After full validation finishes
+Once summary 9558371 passes, inspect the full build receipt, generated numerical tables and 135 patient-level distributions. Interpret full-cohort results in Results and Discussion, including any agreement or disagreement with the pilot, before final author review. Check every full figure and rendered page, its captions, defined counts and actual deletion grids. Preserve the ten-patient supplementary population and post-pilot expansion disclosure.
 
-1. Check summary 9558371 and build 9560474 exit codes and their JSON evidence receipts. Reconcile 135 patients, 405 runs and the frozen query budget, without merging incompatible attempts.
-2. Read the generated full tables and patient-level distributions. Update the abstract, Results and Discussion to explain the full findings while retaining separate pilot results and the post-pilot expansion disclosure. Do not infer an adaptive benefit from the pilot or from selected diagnostics.
-3. Inspect all full figures and manuscript pages at the 5.5-inch printed figure width, including actual-grid deletion trajectories, defined/unavailable counts, contact sheet and grayscale distinctions. Record QA against the PDF's SHA-256.
-4. Obtain author confirmation of order, affiliations, correspondence, contributions, funding, interests from both authors, secondary-use authorization, approved data access, releasable code, original-workflow permission and AI disclosure. Prof. Yen's 2024 affiliation is historical evidence, not current confirmation.
-5. Resolve typography, rebuild a new immutable package, and repeat numerical/citation/PDF checks on that exact PDF. Deliver it to Ian for final review and provide Prof. Yen an approval opportunity. Public release remains blocked until those conditions are satisfied.
+Ian and Prof. Yen must supply or confirm author order, current affiliations/correspondence, contribution assignments, work-specific funding, interests from both authors, secondary-use/consent coverage, approved data/code statements and AI disclosure. Clinical-image and original-workflow publication permission remain outstanding. Add those verified statements, rebuild, and review that exact PDF before any release.
 
-If validation misses the review window, use the clearly labeled ten-patient manuscript and disclose the pending expansion rather than reporting invented or partial full-cohort results. No new inference is needed to finish that paper.
+`--submission-pdf` requires actual confirmation flags, complete declaration text, final typography and explicit final-review approval. It only builds a PDF; it never submits. The clean candidate does not bypass this gate. No ten-patient fallback will be submitted automatically.
 
-## Deferred safely
-
-Matched total-query-budget comparisons, pool-ratio/subset-size sensitivity, repeated random-deletion orders, deletion with additional rankings, expanded Elastic Net/Pearson/LOO/stability, historical bootstrap inference, physician validation and clustering ablations are not completed full-cohort experiments. They are optional future work and must not delay this proceedings manuscript.
+Matched total-query budgets, sampling-ratio/subset-size sensitivity, repeated random deletion controls, expanded Elastic Net/Pearson/stability/LOO, bootstrap inference, physician validation and clustering ablations are deferred. They must not delay a scientifically complete proceedings package.

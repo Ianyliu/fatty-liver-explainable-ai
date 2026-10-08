@@ -10,7 +10,9 @@ Build instructions and the evidence ledger are generated with each private packa
 
 The release checklist records author order, affiliations, correspondence, contributions, funding, competing interests, secondary-use authorization, code/data restrictions, AI-assisted preparation, final figures and typography. Missing information is not a declaration of “none.”
 
-The review draft may use Nimbus Roman where Times New Roman is unavailable. This substitution must be resolved or explicitly accepted by ASA before marking a PDF submission-ready.
+Local Times New Roman files are available and verified by SHA-256 and family. PDF QA verifies actual embedding. Fonts are not redistributed with the source package. A fallback substitution is explicitly recorded and cannot pass the submission gate without a documented ASA exception.
+
+Clinical images are authorized for private review only at present. Publication eligibility remains pending. The clean review/candidate PDFs keep outstanding declarations and approvals in a separate checklist; confirmed author statement text is still required before final approval.
 
 ## Analysis boundaries
 
