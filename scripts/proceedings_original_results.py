@@ -56,6 +56,5 @@ def original_results(output):
         'presentation; their classifier coefficients, uncertainty intervals and significance coding '
         'have not been independently revalidated and are not quantitative evidence for the current '
         'probability-regression experiments. Current estimates are reported separately in the tables '
-        'and evaluation figures, with a validated patient-level example in the appendix. '
-        'Clinical-image publication eligibility remains subject to author confirmation before release.')
+        'and evaluation figures, with a validated patient-level example in the appendix.')
     return caption, sources

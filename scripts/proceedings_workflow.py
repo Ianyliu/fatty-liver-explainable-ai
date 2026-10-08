@@ -15,7 +15,7 @@ def workflow(output):
     configure();original=plt.imread(ASSETS/'original_workflow.png')
     height,width=original.shape[:2]
     fig=plt.figure(figsize=(5.5,5.5*height/width))
-    ax=fig.add_axes([0,0,1,1]);ax.imshow(original);ax.axis('off')
+    ax=fig.add_axes([0,0,1,1]);ax.imshow(original,interpolation='none');ax.axis('off')
     save(fig,Path(output),'figure1_workflow')
 
 
