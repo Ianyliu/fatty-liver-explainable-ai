@@ -62,7 +62,7 @@ def influence_figure(pilot,output):
         for position,index,value in zip(positions,order,g):
             direction=1 if value>=0 else -1
             center=value+direction*.105*span
-            ax.imshow(Image.open(example['images'][index]),
+            ax.imshow(Image.open(example['images'][index]),cmap='gray',vmin=0,vmax=255,
                 extent=(position-.365,position+.365,center-.075*span,center+.075*span),
                 aspect='auto',zorder=4)
         ax.set(xlim=(-.65,n-.35),ylim=(min(0,float(g.min()))-.25*span,max(0,float(g.max()))+.25*span),
