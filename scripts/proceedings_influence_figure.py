@@ -40,7 +40,7 @@ def example_data():
     raise ValueError('No eligible illustrative patient with defined explanation vectors')
 
 
-def influence_figure(pilot,output):
+def influence_figure(pilot,output,name='figure7_current_influence'):
     configure();example=example_data();values=example['values'];n=len(values)
     require(n==20,'The validated pilot illustration expects twenty images')
     # Preserve the README's visual language: signed vertical bars with ultrasound
@@ -75,7 +75,7 @@ def influence_figure(pilot,output):
         ax.text(-.10,1.16,letter,transform=ax.transAxes,fontsize=11,weight='bold')
     fig.text(.13,.025,'Cyan: positive association     Coral: negative association',fontsize=8)
     fig.text(.13,.005,'Same image order in all panels; no significance fading or uncertainty intervals.',fontsize=7.5)
-    save(fig,Path(output),'figure2_influence')
+    save(fig,Path(output),name)
     values.to_csv(Path(output)/'image_influence_example.csv',index=False)
     caption=(f'Image-influence plots in the original README style, using current validated outputs (pilot ordinal {example["index"]+1}). '
         'A, marginal Pearson inclusion–probability correlations; B–C, conditional Elastic Net and Ridge probability-regression coefficients. '

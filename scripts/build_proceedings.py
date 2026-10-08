@@ -117,6 +117,7 @@ def build(args):
     from proceedings_tables import export_tables, tex
     from proceedings_workflow import workflow,workflow_comparison
     from proceedings_influence_figure import influence_figure
+    from proceedings_original_results import original_results
     from proceedings_fonts import resolve_font
     from proceedings_sampling_figure import sampling_figure
     from proceedings_fidelity_figure import fidelity_figure
@@ -156,9 +157,11 @@ def build(args):
         (work/'main.tex').write_text(main_text)
     ledger,metrics,pilot_metrics,secondary=export_tables(main,pilot,generated)
     workflow(figures)
-    influence_caption,example=influence_figure(pilot,figures)
+    influence_caption,original_result_sources=original_results(figures)
+    current_influence_caption,example=influence_figure(pilot,figures)
     captions={
         'InfluenceCaption':influence_caption,
+        'CurrentInfluenceCaption':current_influence_caption,
         'SamplingCaption':sampling_figure(main,figures),
         'FidelityCaption':fidelity_figure(main,pilot,figures),
         'DeletionCaption':deletion_figure(main,figures),
@@ -202,8 +205,14 @@ def build(args):
         for name,text in {**framing,**captions}.items():
             handle.write('\\newcommand{\\'+name+'}{'+tex(text)+'}\n')
     for name,caption in captions.items():
-        ledger['entries'].append({'id':'figure:'+name,'definition':caption,'population':'pilot' if name in ('DiagnosticsCaption','InfluenceCaption') else args.phase,
-            'source_set':'pilot' if name in ('DiagnosticsCaption','InfluenceCaption') else 'primary','validation':'passed'})
+        if name=='InfluenceCaption':
+            ledger['entries'].append({'id':'figure:'+name,'definition':caption,'population':'historical README illustrations',
+                'sources':original_result_sources,'validation':'original image hashes verified; historical estimates and uncertainty not revalidated'})
+        else:
+            secondary_caption=name in ('DiagnosticsCaption','CurrentInfluenceCaption')
+            ledger['entries'].append({'id':'figure:'+name,'definition':caption,'population':'pilot' if secondary_caption else args.phase,
+                'source_set':'pilot' if secondary_caption else 'primary','validation':'passed'})
+    ledger['sources'].extend(original_result_sources)
     ledger['sources'].extend(example['sources'])
     ledger['entries'].append({'id':'figure:patient_influence','selection':example['selection'],
         'pilot_ordinal':example['index']+1,'arm':'random','seeds':[0,1,2],
@@ -254,7 +263,7 @@ def build(args):
             'ten-patient Elastic Net, Pearson, seed stability and leave-one-image-out analyses',
             'independent review including 120 surrogate refits',
             'CPU-only saved-artifact design diagnostics and ranking/LOO agreement',
-            'original README workflow restored unchanged, README-style validated influence plots, quantitative figures, five tables, verified references and clean manuscript'],
+            'original README workflow as Figure 1 and original bar-chart composite as Figure 2; validated current influence example in the appendix; quantitative figures, five tables, verified references and clean manuscript'],
         'full_cohort':('135 patients and 405 runs validated, including the ten reused pilot patients'
                        if args.phase=='full' else 'pending GPU array 9558368 and validation summary 9558371; no partial results reported'),
         'pending':['Ian manuscript/figure review; Prof. Yen authorship/content approval opportunity',
@@ -317,7 +326,7 @@ def build(args):
     (output/'git_commits.txt').write_text(command(['git','log','--format=%h %s','f59092f^..HEAD','--','manuscript/proceedings_2026','scripts/proceedings_*.py','scripts/build_proceedings.py','tests/test_proceedings.py'],ROOT))
     instructions=f'''# Private review package — {args.phase} mode
 
-Read `manuscript_review.pdf`, the clean `manuscript_candidate.pdf`, `author_confirmation_checklist.md`, `latex/figures/contact_sheet.pdf`, `comparisons/workflow_original_vs_revised.pdf`, `abstract_original_vs_revised.md`, generated tables and `evidence_ledger.json`. The author-review and candidate PDFs share clean scientific content while declarations remain outstanding; the separate checklist carries the approval status. Neither file is authorized for publication. The original workflow is main Figure 1; its PNG/editable source and the three unmodified historical README result illustrations are preserved in `supplementary/`. Historical intervals and significance coding are not current evidence.
+Read `manuscript_review.pdf`, the clean `manuscript_candidate.pdf`, `author_confirmation_checklist.md`, `latex/figures/contact_sheet.pdf`, `comparisons/workflow_original_vs_revised.pdf`, `abstract_original_vs_revised.md`, generated tables and `evidence_ledger.json`. The author-review and candidate PDFs share clean scientific content while declarations remain outstanding; the separate checklist carries the approval status. Neither file is authorized for publication. Figure 1 is the unchanged original workflow. Figure 2 composes the three unchanged original README bar charts; their source PNGs are preserved in `supplementary/readme_examples/`. Historical intervals and significance coding are not current evidence. Appendix Figure 7 separately presents validated current patient-level estimates without significance coding. The original workflow PNG/editable source is also in `supplementary/`.
 
 Regenerate with the existing environment, without syncing or relinking it:
 
