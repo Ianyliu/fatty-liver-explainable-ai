@@ -140,6 +140,19 @@ def load_pilot():
     parallel = extra.verified(PARALLEL)
     data = collect(cohort, PILOT, "pilot")
     data["evidence"].extend([hash_entry(REVIEW), hash_entry(PARALLEL)])
+    # Eligible-cohort size is a verified input fact even before its inference completes.
+    expansion = full_cohort_study.verified(FULL)
+    image_counts = []
+    for item in expansion['patients']:
+        child_path = Path(item['plan'])
+        child = json.loads(child_path.read_text())
+        require(child['patient'] == item['patient'] and child['ground_truth'] == 1,
+                'Expansion eligibility identity/label differs')
+        image_counts.append(len(child['images']))
+        data['evidence'].append(hash_entry(child_path))
+    require(len(image_counts) == 135 and sum(image_counts) == 3072 and min(image_counts) == 20
+            and max(image_counts) == 35, 'Eligible expansion image counts differ')
+    data['evidence'].append(hash_entry(FULL))
     summary = PARALLEL.parent / "summary"
     for p in sorted(summary.glob("*.csv")):
         data["evidence"].append(hash_entry(p))

@@ -25,8 +25,8 @@ def sampling_figure(data, output):
     ax.text(success+total*.035,1,str(success),va='center',fontsize=8)
     ax.text(total-success+total*.035,0,str(total-success),va='center',fontsize=8)
     ax=axes[1,0];panel(ax,'C','Pool-deficit reallocation')
-    s=data['stages']; by=s.groupby('patient_index')[['deficit_rows','biased_rows']].sum()
-    fractions=by.deficit_rows/by.biased_rows.replace(0,np.nan)
+    s=data['stages']
+    fractions=s.assign(rate=s.deficit_rows/s.biased_rows.replace(0,np.nan)).groupby('patient_index').rate.mean()
     valid=fractions.dropna()
     ax.scatter(valid.index+1,valid,s=14,color=COLORS['adaptive'],marker='^')
     ax.set(xlabel='Patient index',ylabel='Biased draws reallocated (%)',ylim=(-.02,1.04),xlim=(.5,n+.5))
@@ -45,6 +45,6 @@ def sampling_figure(data, output):
     return (f'Primary population: {n} patients and {total} patient–seed runs. '
         'A, achieved training class-1 proportions averaged across seeds within patient; dashed line is the adaptive target, not a random-arm requirement. '
         'B, adaptive runs attaining exactly 500 predictions of each class versus failing the target. '
-        'C, reallocated biased draws divided by all biased draws within patient; patients without biased draws are unavailable. '
+        'C, reallocated/all-biased draw proportions are computed per seed and averaged within patient among seeds with biased draws; patients without biased draws are unavailable. '
         'D, repeated rows beyond unique masks divided by 1,000, averaged within patient; points show patients and bars their mean. '
         'The intended 85/15 singleton-pool mixture is distinct from achieved subset classes; realized pool composition and conditioning are in the sampling table. No confidence intervals are shown.')

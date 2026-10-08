@@ -1,5 +1,6 @@
 \section{Additional diagnostics: ten patients only}
 Table~\ref{tab:secondary} and Figure~\ref{fig:diagnostics} concern the ten-patient convenience cohort, regardless of the primary build population. They do not imply expanded Elastic Net, Pearson stability or LOO experiments.
+Spearman correlation uses average ranks for ties. Top-five sets use a fixed image-ID tie rule; sign agreement treats absolute coefficients at most $10^{-10}$ as zero. A patient stability result requires defined nonconstant vectors across all three seeds. LOO correlations are unavailable when either ranking/effect vector is constant.
 \input{generated/secondary.tex}
 \begin{figure}[!htbp]\centering\includegraphics[width=\linewidth]{figures/figure5_diagnostics.pdf}\caption{\DiagnosticsCaption}\label{fig:diagnostics}\end{figure}
 

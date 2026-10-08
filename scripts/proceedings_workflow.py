@@ -1,4 +1,4 @@
-"""Publication adaptation of the author's preserved 2024 workflow attachment.
+"""Publication adaptation of the author's preserved workflow attachment.
 
 The topology follows the original: patient sets and singleton pools -> two-stage
 sampling -> binary matrix/GNN responses -> conditional and marginal explanations.

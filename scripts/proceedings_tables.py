@@ -151,10 +151,10 @@ def export_tables(main, pilot, output):
     for prop in (.85,.15):
         g=pools[np.isclose(pools.requested_positive_proportion,prop)] if len(pools) else pools
         realized=g.groupby(["patient_index","seed"]).realized_positive_fraction.mean() if len(g) else pd.Series(dtype=float)
-        # Available run means are descriptive, not an equal-patient primary metric.
+        patient_realized=realized.groupby(level='patient_index').mean() if len(realized) else pd.Series(dtype=float)
         rows.append((f"Intended {int(prop*100)}/{int((1-prop)*100+.1)} pool ratio: realized positive fraction","N/A",
-                     number(realized.mean())+f" ({len(realized)} runs)"))
-    table("sampling", "Sampling feasibility and realized behavior. Pool ratios concern singleton-predicted image classes, not observed disease labels or guaranteed subset predictions. Pool-composition rows average available run means.",
+                     number(patient_realized.mean())+f" ({len(patient_realized)} patients)"))
+    table("sampling", "Sampling feasibility and realized behavior. Pool ratios concern singleton-predicted image classes, not observed disease labels or guaranteed subset predictions. Pool-composition means first average available runs within patient, then patients within each requested-ratio stratum.",
           ["Diagnostic", "Random", "Adaptive"],rows,
           "Validated binary-design SVD and exact reconstruction of adaptive stage/pool clamping; duplicates = rows minus unique masks")
     rows=[]
@@ -185,14 +185,29 @@ def export_tables(main, pilot, output):
             rows.append((arm.capitalize()+": "+label+" seed Spearman",number(m['mean']),f"{m['n']} / 10"))
             j=dispersion(g.top_five_jaccard)
             rows.append((arm.capitalize()+": "+label+" top-5 Jaccard",number(j['mean']),f"{j['n']} / 10"))
+            sign=dispersion(g.sign_agreement)
+            rows.append((arm.capitalize()+": "+label+" sign agreement",number(sign['mean']),f"{sign['n']} / 10"))
             l=pilot['loo_agreement'];l=l[(l.arm==arm)&(l.method==method)]
             z=dispersion(l.spearman)
             secondary[arm][method]['loo_spearman']=z
             rows.append((arm.capitalize()+": "+label+" versus LOO Spearman",number(z['mean']),f"{z['n']} / 10"))
+    loo_means=pilot['loo'].assign(absolute_change=pilot['loo'].delta_class1.abs()).groupby('patient_index').absolute_change.mean()
+    rows.append(('LOO: mean absolute probability change',number(loo_means.mean()),f'{len(loo_means)} / 10'))
+    secondary['loo_mean_absolute_change']=dispersion(loo_means)
     table("secondary", "Additional ten-patient analyses only. Seed stability averages all three seed-pair comparisons within each patient. LOO agreement averages three coefficient/ranking-versus-LOO correlations within patient; constant vectors are unavailable.",
           ["Pilot diagnostic", "Mean", "Defined / total"],rows,
           "Training-only CV probability regressions; complete-seed ranking stability; descriptive rank agreement with saved class-1 LOO effects", "pilot")
     entry("claims:primary", "All primary descriptive numerical claims", primary)
+    # Availability is part B of the fidelity table, keeping five numbered tables.
+    counts_text=(output/'fidelity_counts.tex').read_text()
+    counts_tabular=counts_text[counts_text.index(r'\begin{tabularx}'):counts_text.index(r'\end{tabularx}')+len(r'\end{tabularx}')]
+    fidelity_text=(output/'fidelity.tex').read_text()
+    fidelity_text=fidelity_text.replace(r'\end{table}',
+        '\\par\\vspace{0.8em}\\textit{Availability and paired directions: primary population}\\par\n'
+        +r'\label{tab:fidelity_counts}'+'\n'+counts_tabular+'\n'+r'\end{table}')
+    (output/'fidelity.tex').write_text(fidelity_text)
+    ledger['entries'].append({'id':'table:fidelity:availability','definition':'Part B of the primary fidelity table; see table:fidelity_counts for generated values.',
+                              'validation':'passed','source_set':'primary','population':main['population']})
     entry("claims:pilot", "Separate convenience pilot results", pilot_metrics, "pilot")
     entry("claims:secondary", "Ten-patient secondary comparisons and availability", secondary, "pilot")
     macros={"BuildPopulation":f"{'Full eligible-cohort analysis' if main['population']=='full' else 'Ten-patient exploratory pilot; full-cohort results pending'}",
@@ -207,6 +222,12 @@ def export_tables(main, pilot, output):
         "PilotAdaptiveMAE":number(pilot_metrics['arms']['adaptive']['mae'],6),
         "PilotPairedMAE":number(pilot_metrics['paired_mae'],6,True),
         "PilotRandomFavored":str(pilot_metrics['random_better']),
+        "PilotRuns":str(pilot_metrics['runs']),"PilotQueries":f"{pilot_metrics['model_queries']:,}",
+        "PilotLOOQueries":str(len(pilot['loo'])+pilot['n']),
+        "PilotTargetSuccesses":str(pilot_metrics['target_successes']),
+        "PilotDeficitRows":f"{pilot_metrics['pool_deficit_rows']:,}","PilotBiasedRows":f"{pilot_metrics['biased_rows']:,}",
+        "PilotDesigns":str(len(pilot['design'])),"PilotOneClassSets":str(pilot_metrics['one_class_evaluations']),
+        "PilotRandomEnetStabilityN":str(secondary['random']['elastic_net']['stability']['n']),
         "PilotRandomEnetDelta":number(secondary['random']['enet_minus_ridge_mae'],6,True),
         "PilotAdaptiveEnetDelta":number(secondary['adaptive']['enet_minus_ridge_mae'],6,True),
         "RandomDeletionDelta":number(primary['deletion']['random']['descending_minus_random'],6,True),
