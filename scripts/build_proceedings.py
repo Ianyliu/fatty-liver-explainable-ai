@@ -180,6 +180,11 @@ def build(args):
         count=metrics['random_better'] if difference>0 else metrics['adaptive_better'] if difference<0 else metrics['equal_mae']
         finding=(f'Paired probability-fidelity evaluation favors {favored} sampling on average '
                  f'({count} of {metrics["primary_patients_available"]} patient comparisons), while targeted image-pool mixtures do not guarantee balanced subset predictions.')
+        if args.phase=='full':
+            closer=metrics['balance_comparison']['adaptive_closer_patients']
+            finding=(f'Adaptive sampling moves achieved prediction proportions closer to balance in {closer} of {metrics["patients"]} patients, '
+                     f'but {favored} sampling has lower mean probability-surrogate error. '
+                     'Improved prediction-class coverage therefore does not by itself establish greater explanation fidelity.')
     interpretation=''
     comparison=''
     if args.phase=='full':
