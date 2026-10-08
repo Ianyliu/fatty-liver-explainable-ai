@@ -59,5 +59,13 @@ class ProceedingsReportingTests(unittest.TestCase):
             with patch('build_proceedings.SOURCE',root):
                 with self.assertRaisesRegex(ValueError,'author confirmations'):release_gate()
 
+    def test_checked_boxes_cannot_replace_missing_author_statements(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            (root/'release_confirmations.json').write_text(json.dumps({'confirmations':{'ian_final_review':True}}))
+            (root/'author_declarations.json').write_text(json.dumps({'funding':None,'competing_interests':''}))
+            with patch('build_proceedings.SOURCE',root):
+                with self.assertRaisesRegex(ValueError,'missing declaration text'):release_gate()
+
 
 if __name__=='__main__':unittest.main()
