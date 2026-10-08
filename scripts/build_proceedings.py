@@ -177,8 +177,23 @@ def build(args):
         count=metrics['random_better'] if difference>0 else metrics['adaptive_better'] if difference<0 else metrics['equal_mae']
         finding=(f'Paired probability-fidelity evaluation favors {favored} sampling on average '
                  f'({count} of {metrics["primary_patients_available"]} patient comparisons), while targeted image-pool mixtures do not guarantee balanced subset predictions.')
+    interpretation=''
+    comparison=''
+    if args.phase=='full':
+        if difference is None:
+            interpretation='The expanded cohort does not support a complete-cohort primary MAE comparison because at least one planned patient lacks a defined paired metric. Available-patient summaries cannot replace that estimand.'
+            comparison='A complete-cohort paired MAE comparison with the pilot is unavailable; the pilot is reported separately.'
+        else:
+            direction='higher' if difference>0 else 'lower' if difference<0 else 'equal'
+            interpretation=f'In the expanded eligible cohort, adaptive sampling has {direction} mean shared-novel MAE than random sampling. This comparison evaluates approximation on the specified random evaluation distribution and does not establish clinical validity or a sampling-independent ranking.'
+            pilot_difference=pilot_metrics['paired_mae']
+            same=pilot_difference is not None and (difference>0)==(pilot_difference>0) and (difference<0)==(pilot_difference<0)
+            comparison=('The expanded and pilot paired MAE means have the same direction; their magnitudes and patient distributions are reported separately.' if same else 'The expanded paired MAE mean differs in direction from the pilot; the expanded estimate must be interpreted with its own patient distribution.')+' The expanded population includes the pilot and does not constitute independent replication.'
+    contrast=example['values']
+    contrast=contrast[(contrast.marginal_correlation>0)&(contrast.ridge<-.01)&(contrast.elastic_net<-.01)]
+    contrast_text=('Image '+contrast.image_label.iloc[0]+' has a positive marginal correlation but negative coefficients under both regularized surrogates, illustrating the different associations captured by the two explanation branches.' if len(contrast) else '')
     with (generated/'results.tex').open('a') as handle:
-        framing={'PrimaryStatusText':status,'PrimaryPopulationText':status,
+        framing={'PrimaryInterpretationText':interpretation,'PilotComparisonText':comparison,'ImageInfluenceContrast':contrast_text,'PrimaryStatusText':status,'PrimaryPopulationText':status,
             'AbstractPopulationText':population,'AbstractFindingText':finding,
             'PrimaryResultsHeading':'Expanded eligible-cohort analysis' if args.phase=='full' else 'Pilot fidelity and availability',
             'ExpansionAbstractText':('Expansion to 135 eligible positive patients followed inspection of the pilot.' if args.phase=='full'
