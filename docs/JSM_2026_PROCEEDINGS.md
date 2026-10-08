@@ -27,19 +27,19 @@ The pilot patient-mean shared-novel MAE is 0.067116 for random and 0.111150 for 
 
 The full study targets 135 eligible positive-label test09 patients with complete image availability, 3,072 images and three seeds per patient. It includes the pilot's 30 runs plus 375 new tasks, not an independent replication. Expansion followed inspection of the pilot; the analysis is exploratory.
 
-| Job | Purpose | Live status at 12:16 p.m. Eastern, October 8 |
+| Job | Purpose | Live status at 12:30 p.m. Eastern, October 8 |
 | --- | --- | --- |
-| 9558368 | 375 new GPU patient–seed tasks, concurrency two | 333 completed, two running, 40 pending |
+| 9558368 | 375 new GPU patient–seed tasks, concurrency two | 339 completed, two running, 34 pending |
 | 9558371 | Complete raw-evidence validation summary | Pending successful array completion |
 | 9560474 | Full private manuscript/figures build | Pending successful validation summary |
 
-Snapshot and raw scheduler rows: `outputs/proceedings_2026/jobs-20261008-v1/revision_status.json`. Recent 20 completed tasks averaged about 560 seconds. With two concurrent tasks, approximately 3–4 hours of inference remained at that snapshot, subject to preemption and queue availability. A full-cohort review before October 9 noon Eastern appears feasible if completion and validation succeed; it is not guaranteed. The ASA submission page states October 9, without specifying a cutoff: https://ww2.amstat.org/meetings/jsm/2026/submissions.cfm.
+Snapshot and raw scheduler rows: `outputs/proceedings_2026/jobs-20261008-v1/revision_final_status.json`. Recent 20 completed tasks averaged about 560 seconds. With two concurrent tasks, approximately three hours of inference remained at the final snapshot, subject to preemption and queue availability. A full-cohort review before October 9 noon Eastern appears feasible if completion and validation succeed; it is not guaranteed. The ASA submission page states October 9, without specifying a cutoff: https://ww2.amstat.org/meetings/jsm/2026/submissions.cfm.
 
 No full-cohort result is included before complete validation. The full build rejects absent/partial summaries and requires all 405 preserved runs and source/configuration consistency. The pending report job selects and hashes publication sources at execution, checks that they stay unchanged during its build, and preserves a source snapshot. Frozen inference inputs, checkpoints and running-job configurations are unchanged. No new experiments were launched for this revision.
 
 ## Private deliverables
 
-The revised pilot package is `outputs/proceedings_2026/pilot-revision-20261008-v1/`. The original review package remains at `outputs/proceedings_2026/pilot-review-20261008-final/` for comparison. Inspect the new build and visual-QA records before treating any package as complete.
+The revised pilot package is `outputs/proceedings_2026/pilot-revision-20261008-v2/`. Version v1 remains preserved and its fidelity-label overlap was corrected in v2. The original review package remains at `outputs/proceedings_2026/pilot-review-20261008-final/` for comparison. The final build and separate visual-QA record confirm a 15-page, nonsecured letter-size PDF, embedded Times New Roman, resolved citations, no overfull text boxes and no private identifiers detected in extracted text. The rendered figures/pages were inspected; this is agent QA, not author approval.
 
 - `manuscript_review.pdf` and `manuscript_candidate.pdf`: clean private scientific copies, pending declarations and approval.
 - `latex/`: manuscript source, bibliography, generated macros, CSV/TeX tables and all figure exports.
@@ -86,11 +86,13 @@ squeue -j 9558368,9558371,9560474
 
 Dependencies: pinned existing NumPy/Pandas/SciPy/scikit-learn/Matplotlib/Pillow; XeLaTeX, BibTeX, fontspec, geometry, natbib, booktabs, tabularx, graphicx, Fontconfig and Poppler. R is unnecessary for the chosen implementation. Local Times New Roman regular/bold/italic/bold-italic files are verified by family and SHA-256 against `font_source.json`; the original package/license remain in ignored `outputs/proceedings_2026/fonts/`. Extracted font files are not redistributed. The build records the actual embedded family and never silently calls a substitute Times New Roman.
 
-Reporting tests cover patient weighting, missingness, constant rankings, full-run completeness, bibliography resolution and author release gates. A new test verifies that checked approval boxes cannot replace missing declaration text. Automated PDF checks cover citations, glyphs, encryption, page size, identifiers and font embedding; manual visual review remains separate.
+Reporting tests cover patient weighting, missingness, constant rankings, full-run completeness, bibliography resolution and author release gates. All 59 tests pass; the final reporting-only rerun passes all eight checks. A new test verifies that checked approval boxes cannot replace missing declaration text. Automated PDF checks cover citations, glyphs, encryption, page size, identifiers and font embedding; manual visual review remains separate.
 
 ## Completion and release gate
 
 Once summary 9558371 passes, inspect the full build receipt, generated numerical tables and 135 patient-level distributions. Interpret full-cohort results in Results and Discussion, including any agreement or disagreement with the pilot, before final author review. Check every full figure and rendered page, its captions, defined counts and actual deletion grids. Preserve the ten-patient supplementary population and post-pilot expansion disclosure.
+
+The ASA page also requires an eligible oral presentation (including a poster presentation); confirm actual presentation and any applicable proof-of-progress requirement. Acceptance alone does not establish these facts.
 
 Ian and Prof. Yen must supply or confirm author order, current affiliations/correspondence, contribution assignments, work-specific funding, interests from both authors, secondary-use/consent coverage, approved data/code statements and AI disclosure. Clinical-image and original-workflow publication permission remain outstanding. Add those verified statements, rebuild, and review that exact PDF before any release.
 
