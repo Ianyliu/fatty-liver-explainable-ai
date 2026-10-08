@@ -11,13 +11,14 @@ The clean author-review and candidate PDFs have no internal-review banner or eng
 Figures are generated with Python/Matplotlib at a 5.5-inch manuscript width, with vector PDF/SVG and 300-dpi PNG exports:
 
 1. **Original README workflow:** restored unchanged as main Figure 1, preserving the author's layout, artwork, colors, model architecture and arrows. The caption qualifies historical classifier/ten-fold-CV/physician-evaluation labels against current probability regression, fixed-alpha Ridge, five-fold Elastic Net and proposed physician assessment. The PNG and editable draw.io remain preserved.
-2. **README-style image-influence results:** signed vertical cyan/coral bars with corresponding grayscale ultrasound thumbnails beside the bar ends, matching the visual language of the three original example plots. Current validated three-seed Pearson/Elastic Net/Ridge estimates replace historical numbers. All three panels share twenty images sorted by Pearson mean; I01–I20 are anonymous display labels. No unvalidated error bars or faded significance coding are shown. The three unmodified README result images are preserved privately as historical source references with URL/SHA-256 provenance.
+2. **Original README result composite:** the three original PNGs, stacked in README order: A, marginal Pearson correlation; B, conditional Elastic Net; C, conditional Ridge. Only panel headings are added outside the artwork. Original values, thumbnails, labels, ordering, colors, error bars and faded bars are unchanged. The caption explicitly distinguishes these historical illustrations from current validated probability-regression evidence. SHA-256 checks enforce the original sources. This follows Ian's latest October 8 instruction to use the original charts rather than recreate them.
 3. **Sampling:** paired achieved prediction proportions and patient-level distributions of pool reallocation and duplicate masks. Target attainment is annotated.
 4. **Fidelity:** paired patient MAE, adaptive-minus-random differences and exact arm-specific training-mean constant comparisons.
 5. **Deletion:** control trajectories on one patient's actual deletion grid and paired patient-level descending-minus-random raw AUC. Normalized-AUC correlation does not occupy a main panel.
 6. **Supplementary pilot diagnostics:** compact method/metric similarity matrix with defined counts and Elastic Net-versus-Ridge differences. These are ten-patient analyses only.
+7. **Supplementary current image-influence example:** current validated three-seed Pearson/Elastic Net/Ridge estimates for twenty images, drawn in the README thumbnail-on-bar style. All panels share image order; anonymous labels I01–I20 replace source IDs. No unvalidated error bars or faded significance coding are used. This figure is separate from the original main Figure 2.
 
-The patient example and historical artwork contain clinical images. Ian authorized their use for private review on October 8. Publication eligibility remains unconfirmed, including for the adapted workflow. Do not publish the PDF, package or image derivatives until that issue is resolved. Visual inspection and extracted-text checks supplement, rather than establish, eligibility.
+The patient example and historical artwork contain clinical images. Ian authorized their use for private review on October 8. Publication eligibility remains unconfirmed. The unchanged original bar charts retain their image labels; extracted-text checks do not inspect labels embedded in raster images. Do not publish the PDF, package or image derivatives until eligibility is resolved. Visual inspection and extracted-text checks supplement, rather than establish, eligibility.
 
 ## Current results and full-cohort dependency
 
@@ -27,19 +28,19 @@ The pilot patient-mean shared-novel MAE is 0.067116 for random and 0.111150 for 
 
 The full study targets 135 eligible positive-label test09 patients with complete image availability, 3,072 images and three seeds per patient. It includes the pilot's 30 runs plus 375 new tasks, not an independent replication. Expansion followed inspection of the pilot; the analysis is exploratory.
 
-| Job | Purpose | Live status at 12:30 p.m. Eastern, October 8 |
+| Job | Purpose | Checked October 8, after full-cohort validation |
 | --- | --- | --- |
-| 9558368 | 375 new GPU patient–seed tasks, concurrency two | 339 completed, two running, 34 pending |
-| 9558371 | Complete raw-evidence validation summary | Pending successful array completion |
-| 9560474 | Full private manuscript/figures build | Pending successful validation summary |
+| 9558368 | 375 new GPU patient–seed tasks, concurrency two | All 375 completed, exit 0:0 |
+| 9558371 | Complete raw-evidence validation summary | Completed, exit 0:0; summary status passed |
+| 9560474 | Earlier full private manuscript/figures build | Failed, exit 1:0; publication-source integrity guard detected the subsequently requested Figure 2 revision |
 
-Snapshot and raw scheduler rows: `outputs/proceedings_2026/jobs-20261008-v1/revision_final_status.json`. Recent 20 completed tasks averaged about 560 seconds. With two concurrent tasks, approximately three hours of inference remained at the final snapshot, subject to preemption and queue availability. A full-cohort review before October 9 noon Eastern appears feasible if completion and validation succeed; it is not guaranteed. The ASA submission page states October 9, without specifying a cutoff: https://ww2.amstat.org/meetings/jsm/2026/submissions.cfm.
+Raw scheduler rows: `outputs/proceedings_2026/jobs-20261008-v1/readme_originals_sacct.txt`. The completed summary validates all 405 runs and all 135 patient comparisons, with no missing primary patients. Full-cohort patient-mean shared-novel MAE is 0.066109 for random and 0.119002 for adaptive sampling; paired difference +0.052894. Random has lower MAE for 129 patients, adaptive for two, with four ties. Adaptive attained the requested balance in one of 405 runs. The main evaluation used 911,151 GNN queries, including 67,410 reused pilot queries. The expansion agrees with the pilot's unfavorable adaptive-fidelity direction and remains exploratory. These values are cross-checked against the preserved patient CSV in `outputs/proceedings_2026/full_validated_numerical_crosscheck.json`.
 
-No full-cohort result is included before complete validation. The full build rejects absent/partial summaries and requires all 405 preserved runs and source/configuration consistency. The pending report job selects and hashes publication sources at execution, checks that they stay unchanged during its build, and preserves a source snapshot. Frozen inference inputs, checkpoints and running-job configurations are unchanged. No new experiments were launched for this revision.
+The full build rejects absent/partial summaries and requires all 405 preserved runs and source/configuration consistency. Job 9560474 began before the latest editorial instruction, and its source-change failure does not invalidate the experiment or summary. Its output is superseded. A new CPU-only local full build uses the committed original-figure layout at `full-readme-originals-20261008-v1`; it repeats artifact validation and publication calculations, with no new GNN queries. Frozen inference inputs, checkpoints and running-job configurations are unchanged. No new experiments were launched for this revision.
 
 ## Private deliverables
 
-The revised pilot package is `outputs/proceedings_2026/pilot-original-figures-20261008-v1/`. Earlier revision packages remain preserved. The original review package remains at `outputs/proceedings_2026/pilot-review-20261008-final/` for comparison. The new build restores the original workflow and README plot style; consult its PDF/build/visual-QA records. Earlier revision QA remains specific to those earlier PDFs.
+The latest full-cohort package is built at `outputs/proceedings_2026/full-readme-originals-20261008-v1/`. Consult its manifest and QA records to establish completion. The preceding pilot package, `pilot-original-figures-20261008-v1`, has the unchanged workflow but predates the request for an exact original-chart composite. Earlier packages remain preserved; their QA applies only to those PDFs. The original review remains at `pilot-review-20261008-final/` for comparison.
 
 - `manuscript_review.pdf` and `manuscript_candidate.pdf`: clean private scientific copies, pending declarations and approval.
 - `latex/`: manuscript source, bibliography, generated macros, CSV/TeX tables and all figure exports.
@@ -50,9 +51,9 @@ The revised pilot package is `outputs/proceedings_2026/pilot-original-figures-20
 - `author_confirmation_checklist.md`: remaining author facts, image permissions and approval requirements.
 - `evidence_ledger.json`, `build_manifest.json`, `pdf_qa.json`, `review_validation.json`: scientific definitions, validated source hashes, artifact hashes, automated PDF checks and separate rendered-page review.
 - `reference_verification.json`, `git_commits.txt`: verified bibliography and source history.
-- `supplementary/`: historical original workflow and editable source.
+- `supplementary/`: original workflow, editable source, unchanged README result PNGs and their provenance.
 
-Expected full output: `outputs/proceedings_2026/full-review-cpu-20261008-v1/`. This path alone is not evidence that a full manuscript exists. Report configuration/submission/execution receipts remain under `outputs/proceedings_2026/jobs-20261008-v1/`; logs are `logs/xai-jsm-review-{JOB_ID}.out`.
+The earlier scheduler output `full-review-cpu-20261008-v1/` is superseded and must not be delivered as the latest manuscript. Its configuration/submission/execution receipts remain under `outputs/proceedings_2026/jobs-20261008-v1/`; its log is `logs/xai-jsm-review-9560474.out`.
 
 The evidence ledger and source paths are restricted. Do not publish the whole review archive or raw data/checkpoints. Public code availability must be distinguished from access to private inputs.
 
@@ -90,7 +91,7 @@ Reporting tests cover patient weighting, missingness, constant rankings, full-ru
 
 ## Completion and release gate
 
-Once summary 9558371 passes, inspect the full build receipt, generated numerical tables and 135 patient-level distributions. Interpret full-cohort results in Results and Discussion, including any agreement or disagreement with the pilot, before final author review. Check every full figure and rendered page, its captions, defined counts and actual deletion grids. Preserve the ten-patient supplementary population and post-pilot expansion disclosure.
+Full-cohort validation is complete, so a full-cohort author-review package before October 9 noon Eastern is feasible. Final readiness depends on PDF review and author declarations rather than further inference. The full manuscript uses the expanded results in the main analysis, retains the separate preliminary pilot comparison and labels additional explanation analyses as ten-patient only. Review the exact revised PDF and original-figure captions before approval. The ASA submission page states October 9 without a cutoff: https://ww2.amstat.org/meetings/jsm/2026/submissions.cfm.
 
 The ASA page also requires an eligible oral presentation (including a poster presentation); confirm actual presentation and any applicable proof-of-progress requirement. Acceptance alone does not establish these facts.
 
