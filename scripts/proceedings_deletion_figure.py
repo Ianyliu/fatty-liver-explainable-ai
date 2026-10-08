@@ -1,48 +1,44 @@
-"""Deletion plots that respect actual fractions and matched patient grids."""
+"""Control deletion trajectories and paired patient heterogeneity on actual grids."""
 import numpy as np
 import matplotlib.pyplot as plt
-from proceedings_data import ARMS, patient_average
-from proceedings_style import COLORS, MARKERS, LABELS, configure, panel, save
+from proceedings_data import ARMS,patient_average
+from proceedings_style import COLORS,MARKERS,LABELS,configure,panel,save
 
 
 def deletion_figure(data,output):
-    configure();fig,axes=plt.subplots(2,2,figsize=(5.5,5.0))
-    fig.subplots_adjust(left=.12,right=.97,bottom=.12,top=.91,wspace=.48,hspace=.70)
+    configure();fig=plt.figure(figsize=(5.5,4.7))
+    a=fig.add_axes([.14,.54,.34,.31]);b=fig.add_axes([.64,.54,.32,.31]);c=fig.add_axes([.17,.13,.77,.24])
     d=patient_average(data['deletion'],['area_under_curve','normalized_area'],('patient_index','arm','control'))
-    raw={a:d[d.arm==a].pivot(index='patient_index',columns='control',values='area_under_curve') for a in ARMS}
-    diffs={a:raw[a].descending-raw[a].random for a in ARMS}
-    # Deterministic descriptive illustration: nearest median random-arm paired AUC.
+    raw={arm:d[d.arm==arm].pivot(index='patient_index',columns='control',values='area_under_curve') for arm in ARMS}
+    diffs={arm:raw[arm].descending-raw[arm].random for arm in ARMS}
     illustration=int((diffs['random']-diffs['random'].median()).abs().sort_index().idxmin())
-    controls={'descending':('#222222','-','o','Descending'),
-              'ascending':('#888888',':','s','Ascending'),
-              'random':('#555555','--','^','Seeded random')}
-    for ax,arm,letter in ((axes[0,0],'random','A'),(axes[1,1],'adaptive','D')):
-        panel(ax,letter,LABELS[arm]+'-trained')
+    controls={'descending':('#008B8B','-','o','Descending'),
+              'ascending':('#9B6B52','--','s','Ascending'),
+              'random':('#49535E',':','^','Random order')}
+    for ax,arm,letter in ((a,'random','A'),(b,'adaptive','B')):
+        panel(ax,letter,LABELS[arm]+'-trained Ridge')
         g=data['trajectories'];g=g[(g.patient_index==illustration)&(g.arm==arm)]
         for control,(color,style,marker,label) in controls.items():
             curve=g[g.control==control].groupby('deleted_fraction').p_class1.mean()
-            ax.plot(curve.index,curve,ls=style,marker=marker,c=color,label=label,markersize=3)
+            ax.plot(curve.index,curve,ls=style,marker=marker,c=color,label=label,markersize=3.4,lw=1.6)
         ax.set(xlabel='Actual fraction deleted',ylabel='Class-1 probability',ylim=(0,1.04),xlim=(0,.51))
-        if letter=='A':ax.legend(frameon=False,fontsize=7,loc='lower left',handlelength=1.7)
-    ax=axes[0,1];panel(ax,'B','Raw AUC differences')
+    handles,labels=a.get_legend_handles_labels();fig.legend(handles,labels,loc='upper center',bbox_to_anchor=(.55,.955),ncol=3,frameon=False,fontsize=8,handlelength=2)
+    panel(c,'C','Paired deletion effects across patients')
+    for patient in diffs['random'].index:c.plot([0,1],[diffs[arm].loc[patient] for arm in ARMS],c='#AEB9C4',alpha=.35,lw=.6)
     for arm in ARMS:
-        x=ARMS.index(arm);values=diffs[arm]
-        ax.scatter(np.full(len(values),x)+np.linspace(-.08,.08,len(values)),values,c=COLORS[arm],marker=MARKERS[arm],s=13,alpha=.75)
-        ax.plot([x-.18,x+.18],[values.mean()]*2,c='#222222',lw=1.5)
-    ax.axhline(0,c='#555555',ls='--',lw=.8)
-    ax.set(xticks=[0,1],xticklabels=['Random','Adaptive'],ylabel='Descending − random AUC',xlim=(-.4,1.4))
-    ax=axes[1,0];panel(ax,'C','Span-normalized AUC')
-    ax.axhline(0,c='#BBBBBB',lw=.65);ax.axvline(0,c='#BBBBBB',lw=.65)
-    for arm in ARMS:
-        norm=d[d.arm==arm].pivot(index='patient_index',columns='control',values='normalized_area')
-        ax.scatter(diffs[arm],norm.descending-norm.random,c=COLORS[arm],marker=MARKERS[arm],s=13,alpha=.7)
-    ax.set(xlabel='Raw AUC difference',ylabel='Normalized AUC difference')
-    fig.suptitle(f"{data['n']} patients · three seeds · rebuilt graphs for every deletion",fontsize=9,y=.995)
-    save(fig,output,'figure4_deletion')
-    return (f'Primary population: {data["n"]} patients, with seed means computed within patient. '
-        f'A and D, the same illustrative patient (ordinal {illustration+1}), selected deterministically as nearest the median random-trained descending-minus-random AUC. '
-        'Curves average three seeds on that patient’s actual fraction grid; no unequal patient grids are pooled. '
-        'B, patient descending-minus-random raw trapezoidal AUC; negative values indicate lower class-1 trajectories for descending deletion. '
-        'C, raw versus span-normalized paired AUC, showing patient-specific integration ranges. '
-        'Colors/markers identify sampling arms in B–C; line styles identify controls in A–D. One seeded random order per patient–seed is shared between arms. '
-        'Points show patient variability, bars show means, and no confidence bands are implied. These are model-behavior interventions, not clinical or causal importance.')
+        j=ARMS.index(arm);v=diffs[arm]
+        c.scatter(np.full(len(v),j),v,c=COLORS[arm],marker=MARKERS[arm],s=16,alpha=.65,zorder=3)
+        c.scatter([j],[v.mean()],c=COLORS[arm],s=48,marker='D',edgecolor='white',linewidth=.8,zorder=5)
+    c.axhline(0,c='#4E5964',ls='--',lw=.9)
+    c.set(xticks=[0,1],xticklabels=['Random-trained','Adaptive-trained'],ylabel='Descending − random AUC',xlim=(-.3,1.3))
+    fig.text(.14,.975,f"Deletion controls · {data['n']} patients · three seeds",fontsize=9.3,weight='bold')
+    fig.text(.17,.025,'Negative: lower class-1 trajectory under descending deletion.',fontsize=7.9)
+    save(fig,output,'figure5_deletion')
+    return (f'Deletion-based model behavior for {data["n"]} patients. '
+        f'A–B, the same illustrative patient (ordinal {illustration+1}), selected as nearest the median random-trained descending-minus-random raw AUC. '
+        'Descending and ascending signed Ridge rankings are compared with one seeded random order per seed shared across arms. '
+        'Curves average three seeds on that patient’s actual deletion-fraction grid; unequal patient grids are not pooled. '
+        'C, paired patient mean differences in raw trapezoidal AUC between descending and random deletion, with equal-patient means shown by diamonds. '
+        'A negative difference indicates a lower class-1 trajectory, not clinical or causal importance. '
+        'Points and connecting lines show patient heterogeneity; no inferential uncertainty bands are implied. '
+        'Ascending contrasts and normalized-AUC diagnostics remain in the numerical evidence package.')
