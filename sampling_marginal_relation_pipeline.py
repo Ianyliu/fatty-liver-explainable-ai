@@ -6,6 +6,7 @@ import gc
 import inspect
 import os
 from dataclasses import dataclass
+from numbers import Integral, Real
 from typing import Callable, Union
 
 import matplotlib.pyplot as plt
@@ -32,10 +33,10 @@ class LIME_subj_pipeline:
     -----------
     test_data_id : str
         Identifier for the test data.
-    img_list : set
-        Set of image identifiers.
-    y : bool
-        Ground truth label.
+    img_list : list
+        List of image identifiers.
+    y : int
+        Binary disease ground truth label, independent of sampling pool labels.
     mi_id : str
         Model identifier.
     img_dir : str
@@ -88,14 +89,15 @@ class LIME_subj_pipeline:
         Saves the results to the result directory.
     """
     test_data_id: str
-    img_list: set
-    y: bool
+    img_list: list
+    y: int
     mi_id: str
     img_dir: str
     pred_func: Callable[[list], int]
     result_parent_dir: str
     image_based: bool = True
     verbose: bool = False
+    random_state: int = None
 
     def __post_init__(self):
         assert self.test_data_id in [f'{i:02}' for i in range(1, 11)], "Invalid test_data_id"
@@ -106,9 +108,16 @@ class LIME_subj_pipeline:
         self.sample_pred_results = []
         self.samples = []
         self.bootstrap_sample = []
+        if self.random_state is not None and (not isinstance(self.random_state, Integral) or not 0 <= self.random_state < 2**32):
+            raise ValueError("random_state must be an integer in [0, 2**32)")
+        self.rng = np.random if self.random_state is None else np.random.RandomState(self.random_state)
+        self.single_img_results = {}
+        self.positive_img_pool = []
+        self.negative_img_pool = []
+        self.sampling_summary = {}
         self.img_list = sorted(self.img_list)
         self.all_img_abs_filepaths = sorted(self.all_img_abs_filepaths)
-        self.img_to_indx = dict(enumerate(self.img_list))
+        self.img_to_indx = {image: index for index, image in enumerate(self.img_list)}
         self.indx_to_img = dict(enumerate(self.img_list))
         self.indx_to_abs_filepath = dict(enumerate(self.all_img_abs_filepaths))
         self.result_dir = os.path.join(self.result_parent_dir, self.mi_id)
@@ -133,8 +142,11 @@ class LIME_subj_pipeline:
         # check test data id exists
 
         # check y is int
-        if not isinstance(self.y, int):
+        if not isinstance(self.y, Integral):
             raise TypeError(f"Y must be an integer but is {type(self.y)} instead")
+        if self.y not in (0, 1):
+            raise ValueError("Y must be a binary disease label")
+        self.y = int(self.y)
 
         # check type of img_list 
         if not isinstance(self.img_list, list):
@@ -158,101 +170,42 @@ class LIME_subj_pipeline:
             raise FileNotFoundError(f"{self.result_parent_dir} does not exist!")
 
     # %%
-    def __verify_sampling_input(self, n_samples: int, target_positive_proportion: float, min_sample_prop: float = None, min_sample_size: int = None, max_sample_prop: float = None, max_sample_size: int = None, ):
-        """
-        Verify the input parameters for the sampling process.
-        Parameters:
-        -----------
-        n_samples : int
-            The number of samples to be drawn.
-        target_positive_proportion : float
-            The target proportion of positive samples.
-        min_sample_prop : float, optional
-            The minimum proportion of samples to be drawn, must be between 0.0 and 1.0.
-        min_sample_size : int, optional
-            The minimum number of samples to be drawn, must be between 0 and the total number of images.
-        max_sample_prop : float, optional
-            The maximum proportion of samples to be drawn, must be between 0.0 and 1.0.
-        max_sample_size : int, optional
-            The maximum number of samples to be drawn, must be between 0 and the total number of images.
-        Raises:
-        -------
-        ValueError
-            If no images are available in the sampling pool.
-            If both min_sample_size and min_sample_prop are provided.
-            If both max_sample_size and max_sample_prop are provided.
-            If min_sample_prop is not between 0.0 and 1.0.
-            If max_sample_prop is not between 0.0 and 1.0.
-            If min_sample_size is not between 0 and the total number of images.
-            If max_sample_size is not between 0 and the total number of images.
-            If min_sample_prop is greater than max_sample_prop.
-            If min_sample_size is greater than max_sample_size.
-        TypeError
-            If n_samples is not an integer.
-            If target_positive_proportion is not a float.
-            If min_sample_prop is provided and is not a float.
-            If max_sample_prop is provided and is not a float.
-            If min_sample_size is provided and is not an integer.
-            If max_sample_size is provided and is not an integer.
-        """
-        num_imgs = len(self.img_list)
+    def __verify_sampling_input(self, n_samples, target_positive_proportion,
+                                min_sample_prop=None, min_sample_size=None,
+                                max_sample_prop=None, max_sample_size=None):
+        """Validate bounds before inference and return inclusive subset sizes."""
+        n_images = len(self.img_list)
+        if not isinstance(n_samples, Integral) or isinstance(n_samples, bool):
+            raise TypeError("n_samples must be an integer")
+        if n_samples < 0:
+            raise ValueError("n_samples must be nonnegative")
+        if not isinstance(target_positive_proportion, Real) or not np.isfinite(target_positive_proportion):
+            raise TypeError("target_positive_proportion must be a finite number")
+        if not 0 <= target_positive_proportion <= 1:
+            raise ValueError("target_positive_proportion must be between 0 and 1")
 
-        if len(self.negative_img_pool) == 0 and len(self.positive_img_pool) != 0:
-            print("All images resulted in correct predictions, sampling may lead to predictable (good) results.")
-        
-        if len(self.positive_img_pool) == 0 and len(self.negative_img_pool) != 0:
-            print("All images resulted in incorrect predictions, sampling may lead to predictable (bad) results.")
+        def bound(size, proportion, default, name):
+            if size is not None and proportion is not None:
+                raise ValueError(f"Provide either {name}_sample_size or {name}_sample_prop")
+            if proportion is not None:
+                if not isinstance(proportion, Real) or not np.isfinite(proportion):
+                    raise TypeError(f"{name}_sample_prop must be finite")
+                if not 0 <= proportion <= 1:
+                    raise ValueError(f"{name}_sample_prop must be between 0 and 1")
+                size = int(n_images * proportion)
+            if size is None:
+                size = default
+            if not isinstance(size, Integral) or isinstance(size, bool):
+                raise TypeError(f"{name}_sample_size must be an integer")
+            if not 1 <= size <= n_images:
+                raise ValueError(f"{name}_sample_size must be between 1 and {n_images}")
+            return int(size)
 
-        if len(self.negative_img_pool) == 0 and len(self.positive_img_pool) == 0:
-            raise ValueError("No images in sampling pool, please run self.__generate_sampling_pool() first")
-
-        min_sample_prop_none_bool = min_sample_prop is not None
-        max_sample_prop_none_bool = max_sample_prop is not None
-        min_sample_size_none_bool = min_sample_size is not None
-        max_sample_size_none_bool = max_sample_size is not None
-        
-        if min_sample_size_none_bool and min_sample_prop_none_bool:
-            raise ValueError("Please only provide either min_sample_size or min_sample_prop to avoid confusion.")
-        
-        if max_sample_size_none_bool and max_sample_prop_none_bool:
-            raise ValueError("Please only provide either max_sample_size or max_sample_prop to avoid confusion.")
-        
-        if not isinstance(n_samples, int):
-            raise TypeError(f"n_samples must be an integer but is instead type {type(n_samples)}")
-        
-        if not isinstance(target_positive_proportion, float):
-            raise TypeError(f"target_positive_proportion must be type float but is instead type {type(target_positive_proportion)}")
-        
-        if min_sample_prop_none_bool and not isinstance(min_sample_prop, float):
-            raise TypeError(f"min_sample_prop must be type float but is instead type {type(min_sample_prop)}")
-        
-        if max_sample_prop_none_bool and not isinstance(max_sample_prop, float):
-            raise TypeError(f"max_sample_prop must be type float but is instead type {type(max_sample_prop)}")
-        
-        if min_sample_size_none_bool and not isinstance(min_sample_size, int):
-            raise TypeError(f"min_sample_size must be type integer but is instead type {type(min_sample_size)}")
-        
-        if max_sample_size_none_bool and not isinstance(max_sample_size, int):
-            raise TypeError(f"max_sample_size must be type integer but is instead type {type(max_sample_size)}")
-
-        if min_sample_prop_none_bool and (min_sample_prop < 0.0 or min_sample_prop > 1.0):
-            raise ValueError(f"Minimum sample proportion {min_sample_prop} must be between 0.0 and 1.0")
-        
-        if min_sample_prop_none_bool and (max_sample_prop < 0.0 or max_sample_prop > 1.0):
-            raise ValueError(f"Maximum sample proportion {max_sample_prop} must be between 0.0 and 1.0")
-        
-        if  min_sample_size_none_bool and (min_sample_size < 0 or min_sample_size > num_imgs):
-            raise ValueError(f"Minimum sample size {min_sample_size} must be between 0 and {num_imgs}")
-
-        if  max_sample_size_none_bool and (max_sample_size < 0 or max_sample_size > num_imgs):
-            raise ValueError(f"Maximum sample size {max_sample_size} must be between 0 and {num_imgs}")
-
-        if min_sample_prop_none_bool and max_sample_prop_none_bool and min_sample_prop > max_sample_prop: 
-            raise ValueError(f"Specified minimum sample proportion {min_sample_prop} must be less than or equal to specified maximum sample proportion {max_sample_prop}")
-        if min_sample_size_none_bool and max_sample_size_none_bool and min_sample_size > max_sample_size: 
-            raise ValueError(f"Specified minimum sample size {min_sample_size} must be less than or equal to specified maximum sample size {max_sample_size}")
-
-    # %%
+        low = bound(min_sample_size, min_sample_prop, 1, "min")
+        high = bound(max_sample_size, max_sample_prop, n_images, "max")
+        if low > high:
+            raise ValueError("Minimum sample size exceeds maximum")
+        return low, high
     def __verify_pred_function_signature(self):
         """
         Verifies the signature of the prediction function (pred_func) and tests its output.
@@ -280,187 +233,97 @@ class LIME_subj_pipeline:
         test_output = self.pred_func(self.img_list)
 
         # Verify function output type 
-        if not isinstance(test_output, (int)):
+        if not isinstance(test_output, Integral) or test_output not in (0, 1):
             raise TypeError(f"test_output must be type int but is {type(test_output)} instead")
 
     # %%
-    def predict_on_random_samples_until_convergence(self, n_samples: int, target_positive_proportion: float, min_sample_prop: float = None, min_sample_size: int = None, max_sample_prop: float = None, max_sample_size: int = None, max_iter: int = 100000, append_to_original: bool = True):
+    def predict_on_random_samples_until_convergence(self, n_samples: int,
+            target_positive_proportion: float, min_sample_prop=None,
+            min_sample_size=None, max_sample_prop=None, max_sample_size=None,
+            max_iter: int = 100000, append_to_original: bool = True):
+        """Draw exactly n_samples new perturbations using two-stage sampling.
+
+        Stage one draws random subsets until either predicted-class quota is
+        reached. Stage two biases image selection toward the missing class,
+        using the original 0.85/0.15 pool proportions. Pools refer to predicted
+        disease classes 1/0, independently of ground truth. Class balance is a
+        target; realized counts and duplicates are recorded in sampling_summary.
+
+        max_iter bounds perturbation predictions, excluding the constructor's
+        full-patient prediction and the singleton probes used to build pools.
+        append_to_original=False clears previous samples; otherwise n_samples
+        additional rows are appended, with a summary for this new batch.
         """
-        Predict on random samples until convergence to a target positive proportion.
-        Parameters:
-        -----------
-        n_samples : int
-            The number of samples to generate.
-        target_positive_proportion : float
-            The target proportion of positive samples (between 0 and 1).
-        min_sample_prop : float, optional
-            The minimum proportion of the total images to be used in a sample.
-        min_sample_size : int, optional
-            The minimum number of images to be used in a sample.
-        max_sample_prop : float, optional
-            The maximum proportion of the total images to be used in a sample.
-        max_sample_size : int, optional
-            The maximum number of images to be used in a sample.
-        max_iter : int, optional
-            The maximum number of iterations to perform (default is 100000).
-        append_to_original : bool, optional
-            Whether to append the new samples to the original list of samples (default is True).
-        Returns:
-        --------
-        list
-            A list of samples generated during the process.
-        Raises:
-        -------
-        TypeError
-            If `target_positive_proportion` is not a float or `max_iter` is not an int.
-        ValueError
-            If `target_positive_proportion` is not between 0 and 1, `max_iter` is less than or equal to 0,
-            `n_samples` is 0, or `n_samples` is greater than or equal to `max_iter`.
-        Notes:
-        ------
-        - The function will print warnings and progress information if `self.verbose` is set to True.
-        - The function ensures that the generated samples meet the target positive proportion as closely as possible
-          within the given number of iterations.
-        - If all images belong to one class, class balance cannot be guaranteed, and resampling will be skipped.
-        """
+        low, high = self.__verify_sampling_input(
+            n_samples, target_positive_proportion, min_sample_prop,
+            min_sample_size, max_sample_prop, max_sample_size)
+        if n_samples == 0:
+            raise ValueError("n_samples must be positive")
+        if not isinstance(max_iter, Integral) or isinstance(max_iter, bool):
+            raise TypeError("max_iter must be an integer")
+        if max_iter < n_samples:
+            raise ValueError("max_iter must cover the requested perturbation count")
+        if not isinstance(append_to_original, bool):
+            raise TypeError("append_to_original must be bool")
+        if len(self.samples) != len(self.sample_pred_results):
+            raise ValueError("Existing samples and predictions are not aligned")
+        if not append_to_original:
+            self.samples = []
+            self.sample_pred_results = []
+
         self.__predict_on_all_single_img()
         self.__generate_sampling_pool()
-
-        num_imgs = len(self.img_list)
-        all_imgs_pos_bool = len(self.positive_img_pool) == num_imgs and len(self.negative_img_pool) == 0
-        all_imgs_neg_bool = len(self.positive_img_pool) == 0 and len(self.negative_img_pool) == num_imgs
-        resample_bool = False
-        if all_imgs_pos_bool or all_imgs_neg_bool:
-            print("Class balance cannot be guaranteed due to all single images belonging to one class")
-            resample_bool = True
-
-        self.__verify_sampling_input(n_samples=n_samples, min_sample_prop=min_sample_prop, min_sample_size=min_sample_size, max_sample_prop=max_sample_prop, max_sample_size=max_sample_size, target_positive_proportion=target_positive_proportion)
-
-        if not isinstance(target_positive_proportion, float):
-            raise TypeError(f"target_positive_proportion must be a float but got {type(target_positive_proportion)}")
-        
-        if not isinstance(max_iter, int):
-            raise TypeError(f"max_iter must be a int but got {type(max_iter)}")
-        
-        if target_positive_proportion < 0.0 or target_positive_proportion > 1.0:
-            raise ValueError(f"target_positive_proportion must be between 0 and 1 but is {target_positive_proportion}")
-        
-        
-        if max_iter <= 0:
-            raise ValueError(f"max_iter must be greater than 0 but is {max_iter}")
-
-        if n_samples == 0:
-            raise ValueError(f"n_samples must be greater than 0 but got {n_samples}")
-        
-        if n_samples >= max_iter:
-            raise ValueError(f"n_samples must be less than max_iter but got {n_samples} samples and {max_iter} iterations as parameters. (Each iteration generates one sample)")
-
-         # Calculate target positive count
-        target_positive_count = int(n_samples * target_positive_proportion)
-        target_negative_count = n_samples - target_positive_count
-        current_positive_count = 0
-        current_negative_count = 0
-        if self.samples is None:
-            self.samples = []
-        if self.sample_pred_results is None:
-            self.sample_pred_results = []
-        
-        if min_sample_size is None and min_sample_prop is not None:
-            min_sample_size = int(num_imgs * min_sample_prop)
-
-        if max_sample_size is None and max_sample_prop is not None:
-            max_sample_size = int(num_imgs * max_sample_prop)
-            
-        iterations = 0
-        # Randomly choose sample sizes between min and max
-        sample_sizes = np.random.randint(min_sample_size, max_sample_size + 1, size = n_samples)
-        # Random sampling from each pool based on sample sizes
-        samples = [np.random.choice(self.img_list, sample_size, replace=False) for sample_size in sample_sizes]
-        
-        while iterations < max_iter and current_positive_count < target_positive_count and current_negative_count < target_negative_count:
-            sample = samples[iterations]
-            y_hat = self.pred_func(sample)
-            if y_hat != self.y:
-                current_negative_count += 1
+        one_pool = not self.positive_img_pool or not self.negative_img_pool
+        target = {1: int(n_samples * target_positive_proportion)}
+        target[0] = n_samples - target[1]
+        counts = {0: 0, 1: 0}
+        stages = {"random": 0, "biased": 0}
+        start = len(self.samples)
+        for _ in range(n_samples):
+            size = int(self.rng.randint(low, high + 1))
+            if one_pool or (counts[0] < target[0] and counts[1] < target[1]):
+                sample = sorted(self.rng.choice(self.img_list, size, replace=False).tolist())
+                stages["random"] += 1
             else:
-                current_positive_count += 1
-                
+                missing_class = 1 if counts[1] < target[1] else 0
+                sample = self._draw_pool_sample(size, 0.85 if missing_class else 0.15)
+                stages["biased"] += 1
+            prediction = self._predict_label(sample)
             self.samples.append(sample)
-            self.sample_pred_results.append(y_hat)
+            self.sample_pred_results.append(prediction)
+            counts[prediction] += 1
 
-            iterations += 1
-
-            if self.verbose and iterations % 200 == 0:
-                print(f"Iteration (= # samples) {iterations}: Current positive proportion = {current_positive_count/ (current_negative_count + current_positive_count):.4f}")
-                                
-        num_current_samples = len(self.samples)
-        sample_sizes = np.random.randint(min_sample_size, max_sample_size + 1, size = n_samples)
-        while resample_bool and iterations < max_iter and num_current_samples < n_samples:
-            
-            sample = samples[iterations]
-            y_hat = self.pred_func(sample)
-            if y_hat != self.y:
-                current_negative_count += 1
-            else:
-                current_positive_count += 1
-                
-            self.samples.append(sample)
-            self.sample_pred_results.append(y_hat)
-            
-            iterations += 1
-            num_current_samples += 1
-            if self.verbose and iterations % 200 == 0:
-                print(f"Iteration (= # samples) {iterations}: Current positive proportion = {current_positive_count/ (current_negative_count + current_positive_count):.4f}")
-                        
-        enough_positive_bool = current_positive_count >= target_positive_count
-        enough_negative_bool = current_negative_count >= target_negative_count
-        iterations_below_max_iter_bool = iterations < max_iter
-        
-        if enough_positive_bool and enough_negative_bool:
-            if self.verbose:
-                print(f"Finished after {iterations} iterations")
-        elif not iterations_below_max_iter_bool:
-            print(f"Maximum iterations reached. Final positive proportion: {sum(self.sample_pred_results)/ len(self.sample_pred_results):.4f}")            
-        elif resample_bool:
-            if self.verbose: 
-                print('Resampling was skipped')
-        elif enough_positive_bool and not enough_negative_bool and iterations_below_max_iter_bool:
-            # Positive threshold met, negative threshold not met
-            if self.verbose:
-                print(f"Enough positive samples {target_positive_count}, using negative sampling pool to increase negative samples")
-            _ = self.__only_sample_negatives(n_extra_samples = target_negative_count - current_negative_count,
-                                         min_sample_size = min_sample_size,
-                                         max_sample_size = max_sample_size,
-                                         )
-            iterations += target_negative_count - current_negative_count
-            
-        elif not enough_positive_bool and enough_negative_bool and iterations_below_max_iter_bool:
-            # Positive threshold met, negative threshold not met
-            if self.verbose:
-                print(f"Enough negative samples {target_negative_count}, using positive sampling pool to increase positive samples")
-            _ = self.__only_sample_positives(n_extra_samples = target_negative_count - current_negative_count,
-                                         min_sample_size = min_sample_size,
-                                         max_sample_size = max_sample_size,
-                                         )
-            
-            iterations = target_negative_count - current_negative_count
-                    
-        if iterations >= max_iter:
-            # iterations maxxed out and neither positive nor negative samples were enough 
-            if self.verbose:
-                print(f"Maximum iterations reached. Final positive proportion: {sum(self.sample_pred_results)/ len(self.sample_pred_results):.4f}")
-        
+        new_samples = self.samples[start:]
+        unique = len({tuple(sorted(sample)) for sample in new_samples})
+        self.sampling_summary = {
+            "requested_samples": int(n_samples), "generated_samples": len(new_samples),
+            "requested_class_counts": target, "class_counts": counts,
+            "class_balance_reached": counts == target, "one_pool_fallback": bool(one_pool),
+            "singleton_predictions": len(self.img_list), "perturbation_predictions": len(new_samples),
+            "stages": stages, "unique_masks": unique, "duplicate_masks": len(new_samples) - unique,
+            "min_sample_size": low, "max_sample_size": high,
+            "pool_semantics": "GNN predicted disease class, independent of ground truth",
+            "random_state": self.random_state,
+        }
         if self.verbose:
-            if len(self.samples) != n_samples or len(self.sample_pred_results) != n_samples or len(self.samples) != len(self.sample_pred_results):
-                print(f"WARNING: Number of samples {len(self.samples)} or length of pred results {len(self.sample_pred_results)} and desired number of sample {n_samples} don't match")      
-                  
-            print(f"number of total samples: {len(self.samples)} " + 
-                # f"number of unique samples: {len(set(self.samples))}" + ## fixme todo later 
-                f"Final positive proportion: {sum(self.sample_pred_results)/ len(self.sample_pred_results):.4f}")
-        
+            print("Sampling summary:", self.sampling_summary)
         return self.samples
 
-    # %%
+    def _predict_label(self, sample):
+        result = self.pred_func(sample)
+        if not isinstance(result, Integral) or result not in (0, 1):
+            raise ValueError("Prediction function must return a binary integer label")
+        return int(result)
+
+    def _draw_pool_sample(self, size, positive_proportion):
+        # Reallocate a short pool's deficit to preserve the requested size.
+        positive = int(size * positive_proportion)
+        positive = max(size - len(self.negative_img_pool), positive)
+        positive = min(positive, len(self.positive_img_pool))
+        negative = size - positive
+        selected = self.rng.choice(self.positive_img_pool, positive, replace=False).tolist()
+        selected += self.rng.choice(self.negative_img_pool, negative, replace=False).tolist()
+        return sorted(selected)
     def __only_sample_positives(self, n_extra_samples: int,min_sample_size: int, max_sample_size: int):
         """
         Generates a specified number of extra positive samples from the positive image pool.
@@ -507,120 +370,33 @@ class LIME_subj_pipeline:
                                               )       
     
     #%%
-    def generate_balanced_random_samples(self, n_samples: int, target_positive_proportion: float, min_sample_prop: float = None, min_sample_size: int = None, max_sample_prop: float = None, max_sample_size: int = None, pred_on_samples = False):
+    def generate_balanced_random_samples(self, n_samples: int,
+            target_positive_proportion: float, min_sample_prop=None,
+            min_sample_size=None, max_sample_prop=None, max_sample_size=None,
+            pred_on_samples=False):
+        """Append pool-biased subsets with exact requested sizes.
+
+        This proportion controls the image pools, not guaranteed graph classes.
+        Repeated masks are allowed and count toward the prediction budget.
         """
-        Generate balanced random samples from positive and negative image pools.
-        Parameters:
-        -----------
-        n_samples : int
-            The number of samples to generate.
-        target_positive_proportion : float
-            The proportion of positive samples in each generated sample. Must be between 0.0 and 1.0.
-        min_sample_prop : float, optional
-            The minimum proportion of the total images to be used in a sample. If provided, min_sample_size is calculated as int(num_imgs * min_sample_prop).
-        min_sample_size : int, optional
-            The minimum number of images to be used in a sample.
-        max_sample_prop : float, optional
-            The maximum proportion of the total images to be used in a sample. If provided, max_sample_size is calculated as int(num_imgs * max_sample_prop).
-        max_sample_size : int, optional
-            The maximum number of images to be used in a sample.
-        pred_on_samples : bool, optional
-            If True, predictions will be made on the generated samples using the pred_func method.
-        Returns:
-        --------
-        list
-            A list of generated samples. Each sample is a list of image identifiers.
-        Raises:
-        -------
-        ValueError
-            If target_positive_proportion is not between 0.0 and 1.0.
-        """
-        if self.single_img_results is None or len(self.single_img_results) <= 0 or not isinstance(self.single_img_results, dict): 
-            self.__predict_on_all_single_img()
-            
-        pos_img_pool_none_bool = self.positive_img_pool is None or len(self.positive_img_pool) == 0 or not isinstance(self.positive_img_pool, list)
-        neg_img_pool_none_bool = self.negative_img_pool is None or len(self.negative_img_pool) == 0 or not isinstance(self.negative_img_pool, list)
-        if pos_img_pool_none_bool or neg_img_pool_none_bool:
-            self.__generate_sampling_pool()
-        num_imgs = len(self.img_list)
-
-        self.__verify_sampling_input(n_samples=n_samples, target_positive_proportion=target_positive_proportion, min_sample_prop=min_sample_prop, min_sample_size=min_sample_size, max_sample_prop=max_sample_prop, max_sample_size=max_sample_size)
-
-        # Calculate min and max sample sizes
-
-        if min_sample_size is None and min_sample_prop is not None:
-            min_sample_size = int(num_imgs * min_sample_prop)
-
-        if max_sample_size is None and max_sample_prop is not None:
-            max_sample_size = int(num_imgs * max_sample_prop)
-
+        low, high = self.__verify_sampling_input(
+            n_samples, target_positive_proportion, min_sample_prop,
+            min_sample_size, max_sample_prop, max_sample_size)
         if n_samples == 0:
-            return
-
-        if not 0.0 <= target_positive_proportion <= 1.0: 
-            raise ValueError(f"Class ratio {target_positive_proportion} must be between 0.0 and 1.0")
-        
-        
-        # if append_to_original and len(self.samples) == 0:
-        #     raise ValueError("Cannot append to random samples because there were no existing samples found")
-        
-        # Calculate all possible number of samples
-        num_all_possible_samples = np.sum([np.math.comb(len(self.img_list), i) for i in range(min_sample_size, max_sample_size + 1)])
-
-        # Limit n_samples
-        original_n_samples = n_samples
-        n_samples = min(n_samples, num_all_possible_samples)
-
-        if n_samples < original_n_samples:
-            print(f"Warning: n_samples was reduced from {original_n_samples} to {n_samples} to match the number of all possible unique samples.")
-
-        # Reset the random sample to nothing
-        samples = [None] * n_samples
-        if pred_on_samples:
-            sample_pred_results = [None] * n_samples
-        
-        for indx in tqdm(range(n_samples)):
-            # Randomly choose a sample size between min and max
-            sample_size = np.random.randint(min_sample_size, max_sample_size + 1)
-
-            # Calculate the number of samples needed from each pool
-            positive_samples_needed = int(sample_size * target_positive_proportion)
-            negative_samples_needed = sample_size - positive_samples_needed
-
-            # Adjust if we don't have enough samples in either pool
-            positive_samples_needed = min(positive_samples_needed, len(self.positive_img_pool))
-            negative_samples_needed = min(negative_samples_needed, len(self.negative_img_pool))
-
-            # Random sampling from each pool
-            positive_samples = np.random.choice(self.positive_img_pool, positive_samples_needed, replace=False)
-            negative_samples = np.random.choice(self.negative_img_pool, negative_samples_needed, replace=False)
-
-            # Combine samples
-            sample = list(positive_samples) + list(negative_samples)
-            samples[indx] = sample
-            
+            return self.samples
+        if not self.single_img_results:
+            self.__predict_on_all_single_img()
+        self.__generate_sampling_pool()
+        if pred_on_samples and len(self.samples) != len(self.sample_pred_results):
+            raise ValueError("Existing unpredicted samples cannot be mixed with predicted samples")
+        for _ in range(n_samples):
+            size = int(self.rng.randint(low, high + 1))
+            sample = self._draw_pool_sample(size, target_positive_proportion)
             if pred_on_samples:
-                y_hat = self.pred_func(sample)
-                sample_pred_results[indx] = y_hat
-        
-        if self.verbose:
-            print(f"Appending {len(samples)} samples to {len(self.samples)} samples")
-        if pred_on_samples:
-            if self.verbose:
-                print(f"Appending {len(sample_pred_results)} sample prediction results to {len(self.sample_pred_results)} sample prediction results")
-            if self.sample_pred_results is not None:
-                self.sample_pred_results += sample_pred_results
-            else:
-                self.sample_pred_results = sample_pred_results
-                            
-        if self.samples is None: 
-            self.samples = samples       
-        else:
-            self.samples += samples
-            
-        
+                prediction = self._predict_label(sample)
+                self.sample_pred_results.append(prediction)
+            self.samples.append(sample)
         return self.samples
-    # %%
     def __predict_on_all_single_img(self):
         """
         Predicts on all single images in the image list and stores the results.
@@ -641,7 +417,7 @@ class LIME_subj_pipeline:
         Prints:
             Accuracy on all single images, number of correct predictions, and total number of images (if `self.verbose` is True).
         """
-        self.single_img_results = {img: self.pred_func([img]) for img in tqdm(self.img_list)}
+        self.single_img_results = {img: self._predict_label([img]) for img in self.img_list}
         if self.verbose:
             num_correct = len([i for i in self.single_img_results.values() if i == self.y])
             accuracy =  num_correct / len(self.single_img_results)
@@ -650,12 +426,12 @@ class LIME_subj_pipeline:
     # %%
     def __generate_sampling_pool(self):
         """
-        Generates the sampling pool by categorizing images into positive and negative pools based on prediction results.
+        Generates stable image pools according to singleton disease predictions.
 
         This method performs the following steps:
         1. Ensures that single image prediction results are available and complete.
-        2. Categorizes images into negative and positive pools based on whether their prediction results match the expected value `self.y`.
-        3. Converts the negative and positive pools from sets to lists.
+        2. Assigns class-0 images to the negative pool and class-1 images to the positive pool, independently of ground truth.
+        3. Sorts both pools so seeded sampling is stable across processes.
         4. Ensures that the total number of images in both pools matches the total number of images in `self.img_list`.
 
         Raises:
@@ -665,11 +441,8 @@ class LIME_subj_pipeline:
         """
         assert len(self.single_img_results) != 0, "Single image prediction results do not exist. Try running self.__predict_on_all_single_img() first"
         assert len(self.single_img_results) == len(self.img_list), f"Some image predictions were not complete. Num of images: {len(self.img_list)}, num of results: {len(self.single_img_results)}"
-        self.negative_img_pool = {k for k,v in self.single_img_results.items() if v != self.y}
-        self.positive_img_pool = set(self.img_list) - self.negative_img_pool
-
-        self.negative_img_pool = list(self.negative_img_pool)
-        self.positive_img_pool = list(self.positive_img_pool)
+        self.negative_img_pool = sorted(k for k, v in self.single_img_results.items() if v == 0)
+        self.positive_img_pool = sorted(k for k, v in self.single_img_results.items() if v == 1)
 
         assert (len(self.negative_img_pool) + len(self.positive_img_pool)) == len(self.img_list), "Negative image pool and positive image pools are incomplete, excluding some images" 
 
@@ -1180,7 +953,7 @@ class LIME_all_subj_pipeline:
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))])
         self.meta_data = pd.read_csv(self.metadata_name, sep=",")
         self.test_data_list = pd.read_csv(self.test_data_list_name)
-        self.checkpoint = torch.load(self.ckpt_name)
+        self.checkpoint = torch.load(self.ckpt_name, map_location=self.device)
         
         ## Call pretrained image encoder ###
         _, self.pretrained_image_encoder = models.image_encoder_model(name=self.image_encoder_id, 
@@ -1195,7 +968,6 @@ class LIME_all_subj_pipeline:
                                             num_classes=self.num_classes,
                                             device=self.device)
         ### Load trained weights ###
-        self.checkpoint = torch.load(self.ckpt_name)
         self.graph_encoder.load_state_dict(self.checkpoint['model_state_dict'])
         self.graph_encoder = self.graph_encoder.eval()
         
@@ -1281,7 +1053,7 @@ class LIME_all_subj_pipeline:
                                             num_classes=self.num_classes,
                                             device=self.device)
             
-            y = mi_id_data.y
+            y = int(mi_id_data.y)
 
             def subj_pred_func(input_img_id_list: list, mi_id = mi_id):
                 
