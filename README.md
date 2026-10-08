@@ -1,10 +1,11 @@
 # Reproducing on a new cluster
 
-Read [REPRODUCIBILITY_AUDIT.md](REPRODUCIBILITY_AUDIT.md) before running an experiment. The uploaded images are incomplete for test split 09, and original prediction tables/reference explanations are still needed. Scientific behavior has not been repaired or rewritten.
+Read [REPRODUCIBILITY_AUDIT.md](REPRODUCIBILITY_AUDIT.md) before running an experiment. One supplied patient now has complete images, saved predictions and reference explanations; the full test09 image set remains incomplete. Original-runtime/source-used provenance still needs reconciliation before fitting. Scientific behavior has not been repaired or rewritten.
 
 - Create the locked Python 3.9 environment: `bash scripts/setup_env.sh` (requires uv, GCC, gfortran, and download access).
 - Local artifacts belong in ignored `data/`, `checkpoints/`, `usflc_xai/`, `outputs/`, and `logs/`. Configure paths using `.env.example`; copy it to ignored `.env`.
 - Check imports without fitting: `.venv/bin/python scripts/check_environment.py`.
+- Audit a saved run without fitting: `.venv/bin/python scripts/audit_saved_run.py --run-dir outputs/original/<run> --report-dir outputs/reproducibility/<run>`. Keep July and November runs separate.
 - Audit inputs: `.venv/bin/python scripts/audit_reproducibility.py --strict`. Detailed patient/file reports stay under ignored `outputs/reproducibility/`.
 - For Slurm, create `logs/` and submit from the repository root: `sbatch slurm/preflight.sbatch`. Supply your cluster account/partition as `sbatch` flags when required.
 - See [the original-server handoff prompt](docs/ORIGINAL_SERVER_HANDOFF.md) to recover matching predictions, reference outputs, missing images, and provenance.

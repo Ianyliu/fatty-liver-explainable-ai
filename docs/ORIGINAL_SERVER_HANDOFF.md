@@ -50,3 +50,16 @@ We are migrating `fatty-liver-explainable-ai` to another cluster. Please perform
 - Provenance/environment manifests: `outputs/original/provenance/`.
 
 All these destinations are ignored by Git. Keep a replay in a new `outputs/replay/` directory so reference results remain intact.
+
+## Follow-up after receiving the first bundle
+
+The destination now has the selected patient's complete July inputs/references, DenseNet weights, original-server source/environment captures, all 890 November prediction/design pairs and the legacy July29 clustering archive. No additional copy of those artifacts is needed. Use this focused follow-up prompt for the remaining gaps:
+
+> Please continue the original-server reproducibility investigation without fitting, inference, sampling, clustering or modifying environments. The first transfer is received and its scientific payload hashes match. We need:
+>
+> 1. The actual **imported** package/runtime versions inside the original xai environment, not only pip freeze/conda package records. Use its Python to print `sys.version`, `numpy.__version__`, `scipy.__version__`, `sklearn.__version__`, `joblib.__version__`, `pandas.__version__`, `matplotlib.__version__`, `torch.__version__`, and `numpy.show_config()`. The supplied captures report sklearn 1.5.1/joblib 1.4.2 but disagree on NumPy (pip/export 1.20.0 vs conda explicit 1.21.5). State whether there is any evidence those versions were used for the historical July/August outputs, rather than merely installed now.
+> 2. Any launch command/config/log or preserved source that connects the selected patient's July predictions to its August Ridge/Elastic-Net fits. The current sampling snapshot has the reversed image-ID mapping, so its identity with the code used to generate saved tables is not established. Preserve relevant backups/untracked scripts if they provide this evidence; do not execute or apply them. Record any original RNG states/seeds if available, otherwise mark them unknown.
+> 3. The destination's refreshed private `outputs/reproducibility/missing_test_images.csv` now lists 14,940 missing test09 image references. If full-cohort reproduction is intended, prepare a separate private bundle of the exact matching JPEGs with hashes. Do not substitute, rename or regenerate images. Transfer this list directly between private storage locations; never publish it to GitHub.
+> 4. The original bundle manifest's `provenance/file_sizes.tsv` entry declares zero bytes and a hash that does not match the supplied 9,804-byte file. All other 142 listed payloads pass. Clarify/correct this administrative listing in a separate manifest, preserving the original; omit self-referential manifest/listing entries when computing their hashes.
+>
+> Return aggregate findings and the private bundle/report location. Do not export credentials or `.env` contents.
