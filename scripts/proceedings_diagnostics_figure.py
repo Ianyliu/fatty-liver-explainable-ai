@@ -1,48 +1,56 @@
-"""Ten-patient-only rank stability and single-image deletion diagnostics."""
+"""Compact ten-patient similarity matrix and auxiliary surrogate comparison."""
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
+from proceedings_data import patient_average
 from proceedings_tables import stability_patient
-from proceedings_style import COLORS, LABELS, configure, panel, save
+from proceedings_style import COLORS,LABELS,MARKERS,configure,panel,save
 
 METHODS=('ridge','elastic_net','marginal_correlation')
 
 
-def diagnostic_panel(ax,frame,metric,letter,title,ylabel):
-    panel(ax,letter,title)
-    labels=[]
-    for j,method in enumerate(METHODS):
-        ns=[]
-        for arm,offset,marker in (('random',-.17,'o'),('adaptive',.17,'^')):
-            values=frame[(frame.method==method)&(frame.arm==arm)][metric].dropna()
-            color=COLORS['pearson' if method=='marginal_correlation' else method]
-            ax.scatter(np.full(len(values),j+offset)+np.linspace(-.035,.035,len(values)),values,
-                       s=14,c=color,marker=marker,alpha=.8)
-            if len(values):ax.plot([j+offset-.09,j+offset+.09],[values.mean()]*2,c='#222222',lw=1.2)
-            ns.append(len(values))
-        labels.append(LABELS[method]+f'\nR:{ns[0]} A:{ns[1]}')
-    ax.set(xticks=range(3),xticklabels=labels,ylabel=ylabel,xlim=(-.5,2.5))
-
-
 def diagnostics_figure(pilot,output):
-    configure();fig,axes=plt.subplots(2,2,figsize=(5.5,5.3))
-    fig.subplots_adjust(left=.12,right=.98,bottom=.13,top=.91,wspace=.48,hspace=.76)
-    s=stability_patient(pilot['stability'])
-    diagnostic_panel(axes[0,0],s,'spearman','A','Seed ranking stability','Mean seed-pair Spearman')
-    axes[0,0].set_ylim(-1.05,1.05)
-    diagnostic_panel(axes[0,1],s,'top_five_jaccard','B','Top-five agreement','Mean seed-pair Jaccard')
-    axes[0,1].set_ylim(-.03,1.05)
-    diagnostic_panel(axes[1,0],pilot['loo_agreement'],'spearman','C','LOO rank agreement','Mean ranking–LOO Spearman')
-    axes[1,0].set_ylim(-1.05,1.05)
-    ax=axes[1,1];panel(ax,'D','LOO change magnitude')
-    means=pilot['loo'].assign(abs_delta=pilot['loo'].delta_class1.abs()).groupby('patient_index').abs_delta.mean()
-    ax.scatter(means.index+1,means,s=18,c=COLORS['reference'])
-    ax.set(xlabel='Pilot patient index',ylabel='Mean absolute LOO change',ylim=(0,max(.001,means.max()*1.15)),xlim=(.5,10.5))
-    fig.text(.12,.025,'Markers: ○ Random    △ Adaptive    Bars: patient mean    R/A: defined patients',fontsize=7.5)
-    fig.suptitle('Supplementary diagnostics · ten patients only · three seeds',fontsize=9,y=.995)
-    save(fig,output,'figure5_diagnostics')
-    return ('Ten-patient convenience pilot only. A–B, Spearman rank correlation and top-five Jaccard averaged across all three seed pairs within patient. '
-        'C, rank agreement with full-minus-omitted-image class-1 probability changes, averaged over three training seeds within patient; this descriptive CPU calculation uses saved LOO inference. '
-        'D, patient mean absolute class-1 change across 20 single-image deletions. '
-        'Method colors distinguish Ridge, Elastic Net and Pearson; circles/triangles distinguish random/adaptive training. '
-        'Available counts are printed under each method. Constant/undefined vectors are unavailable; no arbitrary tie-broken list is treated as stability. '
-        'Points represent patients and bars the mean of defined patient values. No bootstrap, significance tests, clinical validation or 135-patient secondary analysis is implied.')
+    configure();fig=plt.figure(figsize=(5.5,5.1));a=fig.add_axes([.30,.48,.60,.36]);b=fig.add_axes([.18,.13,.72,.19])
+    s=stability_patient(pilot['stability']);loo=pilot['loo_agreement'];matrix=[];counts=[];labels=[]
+    for method in METHODS:
+        for arm in ('random','adaptive'):
+            g=s[(s.method==method)&(s.arm==arm)];l=loo[(loo.method==method)&(loo.arm==arm)]
+            vals=[g.spearman,g.top_five_jaccard,g.sign_agreement,l.spearman]
+            matrix.append([v.mean() for v in vals]);counts.append([v.notna().sum() for v in vals])
+            labels.append(LABELS[method]+' · '+LABELS[arm])
+    matrix=np.array(matrix);counts=np.array(counts)
+    cmap=LinearSegmentedColormap.from_list('association',['#B35836','#FFFFFF','#2166AC']);cmap.set_bad('#E7EAEE')
+    im=a.imshow(np.ma.masked_invalid(matrix),cmap=cmap,vmin=-1,vmax=1,aspect='auto')
+    a.set(xticks=range(4),xticklabels=['Seed\nSpearman','Top-five\nJaccard','Sign\nagreement','LOO\nSpearman'],yticks=range(6),yticklabels=labels)
+    a.tick_params(length=0,labelsize=8)
+    for spine in a.spines.values():spine.set_visible(False)
+    for r in range(6):
+        color=COLORS['pearson' if METHODS[r//2]=='marginal_correlation' else METHODS[r//2]]
+        a.get_yticklabels()[r].set_color(color)
+        for c in range(4):
+            value=matrix[r,c];text=f'{value:.3f}\n{counts[r,c]}/10' if np.isfinite(value) else 'NA\n0/10'
+            a.text(c,r,text,ha='center',va='center',fontsize=8,color='white' if np.isfinite(value) and abs(value)>.72 else '#20262D')
+    a.set_xticks(np.arange(-.5,4,1),minor=True);a.set_yticks(np.arange(-.5,6,1),minor=True)
+    a.grid(which='minor',color='white',lw=2);a.tick_params(which='minor',length=0)
+    fig.text(.035,.875,'A',fontsize=11,weight='bold');fig.text(.14,.875,'Complementary explanation diagnostics',fontsize=9.5,weight='bold')
+    cax=fig.add_axes([.93,.48,.022,.36]);cb=fig.colorbar(im,cax=cax);cb.set_ticks([-1,0,1]);cb.ax.tick_params(labelsize=7.5);cb.outline.set_visible(False)
+    panel(b,'B','Elastic Net versus Ridge fidelity')
+    e=patient_average(pilot['enet'],['novel_mae'],('patient_index','arm','method'))
+    for arm in ('random','adaptive'):
+        g=e[e.arm==arm].pivot(index='patient_index',columns='method',values='novel_mae');delta=g.elastic_net-g.ridge;j=('random','adaptive').index(arm)
+        b.scatter(delta,np.full(len(delta),j)+np.linspace(-.13,.13,len(delta)),s=20,c=COLORS[arm],marker=MARKERS[arm],alpha=.75)
+        b.scatter([delta.mean()],[j],s=48,c=COLORS[arm],marker='D',edgecolor='white',linewidth=.9,zorder=5)
+    b.axvline(0,c='#4F5A65',ls='--',lw=.9)
+    b.set(yticks=[0,1],yticklabels=['Random','Adaptive'],xlabel='Elastic Net MAE − Ridge MAE',ylim=(1.45,-.45))
+    b.spines['left'].set_visible(False);b.tick_params(axis='y',length=0)
+    fig.text(.14,.96,'Additional analyses · ten-patient cohort only',fontsize=9.5,weight='bold')
+    fig.text(.14,.925,'Cells: descriptive mean and defined patients. Shade: −1 to 1, not significance.',fontsize=7.8)
+    fig.text(.18,.025,'B: three-seed patient means; diamonds show means.\nNegative favors Elastic Net.',fontsize=7.6)
+    save(fig,output,'figure6_diagnostics')
+    return ('Ten-patient supplementary analyses only. A, mean seed-pair Spearman, top-five Jaccard and sign agreement, '
+        'and mean ranking-versus-LOO Spearman; each cell states the mean and number of defined patients out of ten. '
+        'Seed comparisons first average all three pairs within patient; LOO comparisons average three training-seed correlations within patient. '
+        'Constant/undefined vectors are unavailable and excluded from explicitly labeled available-patient means. '
+        'Spearman ranges from −1 to 1; Jaccard and sign agreement range from 0 to 1. Shade represents descriptive similarity, not statistical significance. '
+        'B, paired patient Elastic Net-minus-Ridge shared-novel MAE from training-only five-fold selection, with mean diamonds and no confidence intervals. '
+        'No full-cohort Elastic Net, stability or LOO claim is implied.')
