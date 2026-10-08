@@ -26,7 +26,7 @@ def configure():
 
 
 def panel(ax, letter, title):
-    ax.text(-.18, 1.10, letter, transform=ax.transAxes, fontsize=10, weight="bold", va="top")
+    ax.text(-.055/ax.get_position().width, 1.10, letter, transform=ax.transAxes, fontsize=10, weight="bold", va="top")
     ax.set_title(title, loc="left", pad=8)
     ax.tick_params(width=.65, length=3)
     ax.yaxis.set_major_locator(MaxNLocator(nbins=5))
