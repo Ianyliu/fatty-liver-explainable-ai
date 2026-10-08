@@ -249,6 +249,8 @@ def build(args):
     (output/'evidence_ledger.json').write_text(json.dumps(ledger,indent=2,allow_nan=False)+'\n')
     shutil.copy2(SOURCE/'reference_verification.json',output/'reference_verification.json')
     shutil.copy2(SOURCE/'release_confirmations.json',output/'release_confirmations.json')
+    shutil.copy2(SOURCE/'author_statement_proposals.md',output/'author_statement_proposals.md')
+    shutil.copy2(SOURCE/'submission_requirements.json',output/'submission_requirements.json')
     checklist=json.loads((SOURCE/'release_confirmations.json').read_text())
     missing=[key for key,value in checklist['confirmations'].items() if value is not True]
     (output/'author_confirmation_checklist.md').write_text(
@@ -259,7 +261,9 @@ def build(args):
         'Clinical images are included under Ian’s private-review authorization; publication eligibility and permission remain unconfirmed. '
         'Funding, competing-interest and present-ethics declarations are deliberately omitted from the candidate rather than invented. '
         'Insert confirmed statements before final approval.\n\n'
-        +'Typography: '+font_record['family']+'. No substitute is silently represented as Times New Roman.\n')
+        +'Typography: '+font_record['family']+'. No substitute is silently represented as Times New Roman.\n\n'
+        +'See `author_statement_proposals.md` for proposed wording and the precise information needed, including presentation eligibility. '
+        'Official format/deadline verification is recorded in `submission_requirements.json`.\n')
     status_record={
         'phase':args.phase,'new_inference_queries':0,'publication_allowed':False,
         'completed':[
@@ -325,6 +329,7 @@ def build(args):
         'versions':{name:importlib.metadata.version(name) for name in ('numpy','pandas','scipy','scikit-learn','matplotlib','Pillow')},
         'reference_count':len(references['references']),'commands':commands,'release_gate':'No public release without Ian review and Prof. Yen approval opportunity.'}
     manifest['artifacts']=[hash_entry(p) for p in [target,candidate,output/'evidence_ledger.json',output/'abstract_original_vs_revised.md',output/'author_confirmation_checklist.md',
+        output/'author_statement_proposals.md',output/'submission_requirements.json',
         *sorted(generated.glob('*.csv')),*sorted(figures.glob('*.csv')),*sorted(figures.glob('*.pdf')),*sorted(figures.glob('*.svg')),*sorted(figures.glob('*.png')),
         *sorted((output/'comparisons').glob('*'))]]
     (output/'build_manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')

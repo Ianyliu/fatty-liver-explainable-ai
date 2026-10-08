@@ -1,0 +1,21 @@
+{
+  "verified_on": "2026-10-08",
+  "original_source": "https://ww2.amstat.org/meetings/jsm/2026/submissions.cfm",
+  "deadline": "2026-10-09",
+  "deadline_time_of_day": "Not stated in the proceedings section",
+  "eligibility": "Actual oral presentation in an eligible paper, poster or roundtable session; author confirmation pending",
+  "proof_of_progress": "Confirm applicable session compliance; May 31 in requirement paragraph, June 1 in general key-date list",
+  "pdf": {
+    "page_inches": [8.5, 11],
+    "margins_inches": {"top": 1, "bottom": 1, "left": 1.5, "right": 1.5},
+    "font": "10-point Times New Roman",
+    "spacing": "single",
+    "alignment": "fully justified; figures and tables centered",
+    "columns": 1,
+    "sentence_spacing": "one space",
+    "color_graphics": "allowed",
+    "page_limit": null,
+    "security": "nonsecured PDF"
+  },
+  "submission": "Zenodo community 2026jsmproceedings; no upload or publication authorized"
+}
