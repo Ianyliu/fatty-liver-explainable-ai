@@ -1,0 +1,25 @@
+{
+  "references": [
+    {
+      "method": "marginal",
+      "path": "outputs/proceedings_2026/reference_sources/readme_marginal.png",
+      "source_url": "https://github.com/user-attachments/assets/9b7c1cdf-78e4-4bdb-a180-9ec11ac07492",
+      "sha256": "20d7c78d21d9dda59c09186af06dc3eec934bc06c0db69422b12009d9e39dd02",
+      "status": "Historical README illustration; current classifier fits, intervals and significance not independently validated; preserve as private source reference."
+    },
+    {
+      "method": "elastic_net",
+      "path": "outputs/proceedings_2026/reference_sources/readme_elastic_net.png",
+      "source_url": "https://github.com/user-attachments/assets/c39ebec2-2211-4c89-be99-015ad734dfaa",
+      "sha256": "6e2a89a05628badd677f8c5d953097ac09f1150d2a843f74b1c73b2cff9d9024",
+      "status": "Historical README illustration; current classifier fits, intervals and significance not independently validated; preserve as private source reference."
+    },
+    {
+      "method": "ridge",
+      "path": "outputs/proceedings_2026/reference_sources/readme_ridge.png",
+      "source_url": "https://github.com/user-attachments/assets/da72f591-0afe-40a2-96b2-78e8bcc3edbc",
+      "sha256": "068c72f7ab7a9754226e843729b8f73d797c1a27c4e7634496627fc1407bdc83",
+      "status": "Historical README illustration; current classifier fits, intervals and significance not independently validated; preserve as private source reference."
+    }
+  ]
+}

@@ -209,7 +209,7 @@ def build(args):
         'pilot_ordinal':example['index']+1,'arm':'random','seeds':[0,1,2],
         'values':example['values'].to_dict('records'),'publication_eligibility':example['publication_eligibility'],
         'source_set':'pilot','validation':'passed; no new inference'})
-    ledger['entries'].append({'id':'figure:workflow','definition':'Explicit adaptation of original workflow topology with historical/current differences.',
+    ledger['entries'].append({'id':'figure:workflow','definition':'Original README workflow reproduced unchanged; current-method differences are stated in the caption.',
         'source':hash_entry(SOURCE/'assets/original_workflow.png'),'editable_original':hash_entry(SOURCE/'assets/original_workflow.drawio'),
         'provenance':hash_entry(SOURCE/'assets/original_workflow.json')})
     ledger['entries'].append({'id':'methods:protocol','definition':'Fixed scientific settings and source-publication comparison',
@@ -219,6 +219,14 @@ def build(args):
                   'elastic_net_l1_ratios':[.1,.5,.9,1],'actual_correlation_threshold':.95,'source_publication_threshold':.995},
         'source_set':'primary and pilot frozen plans; source publication'})
     contactsheet(figures);historical_workflow(output/'supplementary');workflow_comparison(output/'comparisons',figures);contact_comparison(output/'comparisons',figures)
+    historical_references=json.loads((SOURCE/'assets/readme_result_references.json').read_text())
+    reference_dir=output/'supplementary/readme_examples';reference_dir.mkdir()
+    for row in historical_references['references']:
+        path=ROOT/row['path']
+        if not path.exists() or hash_entry(path)['sha256']!=row['sha256']:
+            raise ValueError('Original README figure missing or changed: '+str(path))
+        shutil.copy2(path,reference_dir/path.name)
+    (reference_dir/'provenance.json').write_text(json.dumps(historical_references,indent=2)+'\n')
     original=(SOURCE/'accepted_abstract.txt').read_text().strip()
     revised=(SOURCE/'abstract.tex').read_text().replace(r'\begin{abstract}','').replace(r'\end{abstract}','').strip()
     revised=revised.replace(r'\AbstractPopulationText{}',population).replace(r'\AbstractFindingText{}',finding).replace(r'\%','%')
@@ -246,7 +254,7 @@ def build(args):
             'ten-patient Elastic Net, Pearson, seed stability and leave-one-image-out analyses',
             'independent review including 120 surrogate refits',
             'CPU-only saved-artifact design diagnostics and ranking/LOO agreement',
-            'refined original workflow, actual patient influence example, quantitative figures, five tables, verified references and clean manuscript'],
+            'original README workflow restored unchanged, README-style validated influence plots, quantitative figures, five tables, verified references and clean manuscript'],
         'full_cohort':('135 patients and 405 runs validated, including the ten reused pilot patients'
                        if args.phase=='full' else 'pending GPU array 9558368 and validation summary 9558371; no partial results reported'),
         'pending':['Ian manuscript/figure review; Prof. Yen authorship/content approval opportunity',
@@ -309,7 +317,7 @@ def build(args):
     (output/'git_commits.txt').write_text(command(['git','log','--format=%h %s','f59092f^..HEAD','--','manuscript/proceedings_2026','scripts/proceedings_*.py','scripts/build_proceedings.py','tests/test_proceedings.py'],ROOT))
     instructions=f'''# Private review package — {args.phase} mode
 
-Read `manuscript_review.pdf`, the clean `manuscript_candidate.pdf`, `author_confirmation_checklist.md`, `latex/figures/contact_sheet.pdf`, `comparisons/workflow_original_vs_revised.pdf`, `abstract_original_vs_revised.md`, generated tables and `evidence_ledger.json`. The author-review and candidate PDFs share clean scientific content while declarations remain outstanding; the separate checklist carries the approval status. Neither file is authorized for publication. The complete historical workflow and editable original are in `supplementary/`.
+Read `manuscript_review.pdf`, the clean `manuscript_candidate.pdf`, `author_confirmation_checklist.md`, `latex/figures/contact_sheet.pdf`, `comparisons/workflow_original_vs_revised.pdf`, `abstract_original_vs_revised.md`, generated tables and `evidence_ledger.json`. The author-review and candidate PDFs share clean scientific content while declarations remain outstanding; the separate checklist carries the approval status. Neither file is authorized for publication. The original workflow is main Figure 1; its PNG/editable source and the three unmodified historical README result illustrations are preserved in `supplementary/`. Historical intervals and significance coding are not current evidence.
 
 Regenerate with the existing environment, without syncing or relinking it:
 
