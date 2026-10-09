@@ -80,7 +80,7 @@ def integrate(args):
         '(Table~\\ref{tab:secondary}; Figure~\\ref{fig:full-secondary-fidelity}). '
         'Stability and ranking-versus-LOO agreement retain explicit defined counts (Figure~\\ref{fig:diagnostics}). '
         'The expansion adds 1,500 independent Ridge/selected-Elastic-Net refits to the 120 pilot checks; recorded CV minima and held-out scores are checked without using evaluation responses for selection. '
-        'The selected LOO evaluation comprises 3,207 calls. Across the original pass and 38 targeted original-node reruns, 4,163 calls were executed, including 210 historical pilot calls and 956 recovery calls. '
+        'The selected LOO evaluation comprises 3,207 calls. Across the original pass and 38 targeted same-GPU-model reruns, 4,163 calls were executed, including 210 historical pilot calls and 956 recovery calls. '
         'These reruns reconciled full-set probabilities and edge counts against primary seed 0 without changing the inference protocol or validation tolerance. '
         'Original seed runs used heterogeneous GPUs, so repeatability can include hardware numerical variability. LOO measures model behavior rather than clinical importance.\n\n')
     body=replace_once(body,r'\subsection{Preliminary and additional ten-patient analyses}',extra+r'\subsection{Preliminary and additional ten-patient analyses}','new full secondary results placement')
