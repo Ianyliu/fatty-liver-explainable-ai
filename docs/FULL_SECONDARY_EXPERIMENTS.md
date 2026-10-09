@@ -80,3 +80,42 @@ The updater compiles the user's staged source, checks citations, glyphs, overflo
 Seven focused tests pass for identity-based reuse, relative/absolute plan paths, changed-evidence rejection, complete LOO coverage/signs, missing/duplicate seeds, independent coefficient refits and protected text replacements. Python compilation, all five Slurm syntax checks and uniqueness checks against the actual edited manuscript passed before freezing. Both pilot-based influence-profile previews were rendered; the random-arm preview was visually inspected and its thumbnail-axis defect corrected before submission.
 
 Completed primary sampling, Ridge fidelity and deletion experiments are not rerun. Matched-query budgets, new sampling ratios, new-method multi-node deletion, repeated random deletion orders, bootstrap inference, physician evaluation and clustering analyses were not completed in the pilot and are outside this submission. No public release, paper submission or Git push is authorized. Author declarations, image/secondary-use permissions, final manuscript/figure review and explicit release approval remain required.
+
+
+## Recovery update — October 8 evening (current submission)
+
+All original experiments completed: 374 scheduled CPU tasks plus the local CPU task, and all 125 GPU LOO tasks. Scheduler accounting confirms **499/499 allocations completed with exit 0:0**; artifact reports contain all **405 CPU records and 135 LOO baselines**, including the pilot. No missing CPU experiment requires resubmission.
+
+Validation job **9563655 failed**, rather than passing scientific validation. Its strict cross-study check found 38 full-set LOO probabilities outside the original 1e-6 absolute/relative tolerance when compared with primary seed 0. All 38 used different GPU models between executions. All 135 full-set predicted classes match, but one patient's full-graph edge count also differs. Maximum absolute probability difference is 0.00880664587020874. This is a substantive reconciliation issue, not a reason to weaken the tolerance. Hardware dependence is an observed association at this stage; same-model retries must demonstrate reconciliation.
+
+Blocked figure/manuscript jobs **9563656/9563657** were cancelled. The first exact-node recovery (`recovery-20261008-v1`, preflight 9565576 and dependent 9565602–9565613) was entirely queued behind occupied nodes and was cancelled **before any inference**. Its receipts, scheduler snapshot, original mismatch audit and source snapshot are retained. It is superseded, with zero recovery queries consumed.
+
+The active replacement is **`outputs/parallel_experiments/full-135-20261008-v1/recovery-20261008-v2/`**. Every retry must use the same GPU model as that patient's primary seed-0 execution, on an explicitly eligible node. RTX A5000/A5500 use typed GPU requests; V100 excludes the PCIe-only node; H200 requests exclude all non-H200 nodes. The runner checks the actual CUDA GPU name and eligible hostname, then verifies full-set class, probability (unchanged tolerance) **and edge count before querying any image removals**. Any mismatch stops the task and preserves its report. Original inference/model/checkpoint/source hashes remain unchanged.
+
+The four arrays contain exactly 38 unique retry patients: 12 A5000, 7 V100-SXM2, 7 A5500 and 12 H200 NVL. Two dependency lanes and per-array concurrency one limit active recovery to at most two GPUs. All 405 CPU analyses and the other 97 LOO baselines are reused. One of the 38 retries is a pilot patient; the selected full evaluation therefore retains nine original pilot LOO baselines. Original pilot/full artifacts are never overwritten.
+
+| Active stage | Job | Work/dependency |
+| --- | --- | --- |
+| RTX A5000 recovery | 9565638 | 12 targeted patients |
+| V100-SXM2 recovery | 9565639 | 7 targeted patients |
+| RTX A5500 recovery | 9565640 | 7 targeted patients; afterok:9565639 |
+| H200 NVL recovery | 9565641 | 12 targeted patients; afterok:9565638 |
+| Complete-cohort validation | 9565642 | afterok of all four retry arrays |
+| Figures, numerical tables and 270 profiles | 9565643 | afterok:9565642 |
+| In-place manuscript integration | 9565644 | afterok:9565643 |
+
+The separate recovery plan binds all original completed record reports, the original frozen plan and separately versioned recovery sources. It supplies a strictly checked replacement mapping to the unchanged original summary/report implementations; no probability/graph validation, independent refit, raw-artifact or complete-cohort check is bypassed. Three focused recovery tests pass, including an edge-only mismatch and rejection of same-model probability disagreement before any removal calls. Python compilation, scheduler syntax and current manuscript anchor checks pass.
+
+Recovery adds **956** model calls if all tasks complete. Selected analysis still contains **3,207** full-set/removal calls; total executed LOO calls become **4,163**, including **210** historical pilot calls and **3,953** new calls across original/recovery executions. Selected and executed counts are reported separately. All unused first-pass LOO artifacts remain preserved. Original seed runs used heterogeneous GPUs, so stability is labeled as potentially including hardware numerical variability.
+
+The existing user-edited manuscript target is unchanged: `outputs/proceedings_2026/full-submission-prep-20261008-v1/`. The recovery integration adapts to the latest rewritten Data paragraph, preserves unrelated text and original Figures 1/2, backs up the package, and records minimal result/scope changes plus accurate recovery query accounting. The original failed validation left no summary directory or partially installed manuscript update.
+
+```bash
+squeue -j 9565638,9565639,9565640,9565641,9565642,9565643,9565644
+sacct -j 9565638,9565639,9565640,9565641,9565642,9565643,9565644 \
+  --format=JobID,State,ExitCode,Elapsed
+```
+
+Compatible H200 resources remain occupied at submission, so that stage may wait for availability. Do not promise a completion time from scheduler acceptance alone. A queued retry or scheduler completion is not full-cohort validation; `recovery-20261008-v2/summary/analysis.json` must pass before integrating any new results. Source changes to the superseded recovery are documented; original inference and the original secondary plan remain hash-valid. Public release remains prohibited without author/user approval.
+
+Active recovery plan SHA-256: `60339c7d24e7d87e9a1b57bd179ae966ea4a8ef2f2cc021efb5ab5ce8612c55d`. Execution commit: `cf28920ae42b03ef28365ba8b0c5db2b79d266b5`. Exact commands/resources are in the active `submissions.json`.
