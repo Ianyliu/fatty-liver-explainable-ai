@@ -1,27 +1,30 @@
-# JSM 2026 proceedings review package
+# JSM 2026 reviewed manuscript sources
 
-This is an exploratory evaluation of image-subset explanations for a fixed fatty-liver GNN. The manuscript follows the accepted poster's narrative while documenting the implemented probability-regression methods. The ten-patient pilot and the later 135-patient expansion must remain distinguishable.
+These text sources preserve the supplied revised manuscript and describe the explanation method in place. Its editable private package is `outputs/proceedings_2026/revised_20261008/JSM2026_revised_package/`. The prior private output directory is backed up at `outputs/private_backups/proceedings_2026_before_revision_20261008.tar.gz`. Existing historical receipts describe their original artifacts and remain unchanged.
 
-Build instructions and the evidence ledger are generated with each private package. Generated results, figures, manuscripts and patient-level data belong below ignored `outputs/proceedings_2026/`, never in Git. Source files here and the publication exporter are versioned. No inference source or frozen configuration is changed for this manuscript.
+Build this revision directly. Do not use `build_proceedings.py`, older finalizers, or historical exporters to regenerate its prose or figures. The source directory here intentionally contains no generated tables, restricted clinical figures, full numeric evidence, PDF or ZIP. All seven referenced figure PDFs remain in the ignored editable package. Figures 1 and 2 preserve the reviewed bytes; no replacement influence bars or duplicate influence figure are allowed.
 
-## Release gate
+From the repository root, run:
 
-**Internal review only. Do not submit, push, publish or publicly release the manuscript or generated package until Ian Liu has reviewed it and Tso-Jung Yen has had an opportunity to approve authorship and manuscript content.**
+```sh
+.venv/bin/python scripts/build_revised_proceedings.py \
+  --package outputs/proceedings_2026/revised_20261008/JSM2026_revised_package \
+  --font-dir outputs/proceedings_2026/fonts/times-new-roman \
+  --latexmk /absolute/path/to/latexmk
+```
 
-The release checklist records author order, affiliations, correspondence, contributions, funding, competing interests, secondary-use authorization, code/data restrictions, AI-assisted preparation, final figures and typography. Missing information is not a declaration of “none.”
+The wrapper verifies licensed local Times New Roman hashes/family, regenerates rounded summaries from original full-precision evidence, runs `latexmk -xelatex -interaction=nonstopmode -halt-on-error main.tex`, checks critical TeX diagnostics, letter size and embedding, and saves the new PDF and build checks. It consumes the package's revised text, never an older exporter. Omit `--latexmk` when the program is on PATH. This server's locally downloaded latexmk is `outputs/revision_audit_20261008/tools/latexmk` (version 4.87).
 
-Local Times New Roman files are available and verified by SHA-256 and family. PDF QA verifies actual embedding. Fonts are not redistributed with the source package. A fallback substitution is explicitly recorded and cannot pass the submission gate without a documented ASA exception.
+For evidence checks without inference:
 
-Clinical images are authorized for private review only at present. Publication eligibility remains pending. The clean review/candidate PDFs keep outstanding declarations and approvals in a separate checklist; confirmed author statement text is still required before final approval.
+```sh
+.venv/bin/python scripts/verify_revised_proceedings.py \
+  --package outputs/proceedings_2026/revised_20261008/JSM2026_revised_package \
+  --cohort-plan outputs/complete_patient/full-135-20261007-v2/full_cohort_plan.json
+```
 
-## Analysis boundaries
+After editing text, copy only those reviewed `.tex`/`.bib` files into the package before rebuilding. Do not copy these historical assets or regenerate workflow/image panels. The summary generator takes `--package` when invoked from the repository; its editable-package copy needs no argument. No fonts are redistributed. A rebuild changes the PDF hash and requires renewed visual inspection; build checks alone do not certify visual QA or submission eligibility.
 
-- Primary response: GNN class-1 probability; fixed-alpha Ridge regression.
-- Elastic Net: training-only shuffled five-fold CV on the ten-patient cohort.
-- Primary fidelity: shared evaluation masks unseen in either training arm, with draw multiplicity retained.
-- Seeds are repeated measurements; average within patients before cohort summaries.
-- Deletion interventions measure model behavior, not clinical or causal importance.
-- No new bootstrap inference, significance testing, physician evaluation or inference experiments are included.
-- Full mode must reject absent or incomplete full-cohort validation, never substitute partial results.
+See [source_confirmations.md](source_confirmations.md) for verified facts and exact outstanding author/source questions. Affiliations and the requested AI disclosure are preserved. Missing funding, competing-interest, contribution or ethics statements are not declarations of “none.” “Supplied test split” remains because historical checkpoint training/tuning linkage is unresolved despite zero overlap with the supplied training/validation lists.
 
-The official proceedings deadline is October 9, 2026. Internal review target: October 9 at noon Eastern, subject to completed-run validation and author confirmations.
+Internal review only. Do not push, submit, publish or publicly release the manuscript/package until Ian Liu reviews it and Prof. Tso-Jung Yen has an opportunity to approve authorship and content. Clinical-image and workflow publication permissions remain unconfirmed. Publication/submission authorization remains pending; the manuscript body contains no review banner or unresolved checklist.

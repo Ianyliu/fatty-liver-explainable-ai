@@ -4,7 +4,7 @@ Scope: local review only on `jsm2026-repro-ablation`, starting at `60466fca944f1
 
 ## 1. Cohort and checkpoint provenance
 
-Verified supplied dataset09 lists contain 7,210 training, 802 validation and 890 test patients, without duplicate IDs or pairwise patient overlap. The 135 selected test patients overlap training and validation by **zero** each. Eligibility is positive `liver_fatty`, at least 20 unique metadata-listed images, unique metadata record, test-list membership and complete readable files: 135 patients, 3,072 images, 20–35 per examination. Positive labels are 75 mild, 49 moderate and 11 severe examinations (coded 1/2/3). All 3,072 JPEGs passed Pillow verification. No outcome-based exclusion was added.
+Verified supplied dataset09 lists contain 7,210 training, 802 validation and 890 test patients, without duplicate IDs or pairwise patient overlap. The 135 selected test patients overlap training and validation by **zero** each. Eligibility is positive `liver_fatty`, at least 20 unique metadata-listed images, unique metadata record, test-list membership and complete readable files: 135 patients, 3,072 images, 20–35 per examination. Positive labels are 75, 49 and 11 examinations coded 1, 2 and 3, respectively. All 3,072 JPEGs passed Pillow verification. No outcome-based exclusion was added.
 
 Evidence: `scripts/import_image_bundle.py:36–58` (`expected_cohort`); `scripts/full_cohort_study.py:26–36`; private `server_evidence/server_source_audit.json` fields `split_counts`, `split_duplicate_ids`, `split_overlaps`, `selected_overlap`, `cohort_patients`, `cohort_images`, `label_counts`, `image_errors`, `source_hashes`. The metadata and split filenames are recorded there without listing IDs. All 135 frozen patient plans matched this selection.
 

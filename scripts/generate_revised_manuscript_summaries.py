@@ -145,7 +145,7 @@ for record in records:
 manifest={'source_ledger_sha256':hashlib.sha256((ROOT/'evidence_ledger_original.json').read_bytes()).hexdigest(),
           'source_metrics_sha256':hashlib.sha256((GEN/'metrics.json').read_bytes()).hexdigest(),
           'source_secondary_sha256':hashlib.sha256((GEN/'secondary.csv').read_bytes()).hexdigest(),
-          'revision_source_hashes':{str(f.relative_to(ROOT)):hashlib.sha256(f.read_bytes()).hexdigest() for f in [ROOT/'latex/body.tex',ROOT/'latex/appendix.tex',ROOT/'server_evidence/inference_runtime.json',ROOT/'server_evidence/server_source_audit.json']},
+          'revision_source_hashes':{str(f.relative_to(ROOT)):hashlib.sha256(f.read_bytes()).hexdigest() for f in [ROOT/'latex/body.tex',ROOT/'latex/appendix.tex',ROOT/'latex/main.tex',ROOT/'latex/references.bib',ROOT/'scripts/generate_manuscript_summaries.py',ROOT/'server_evidence/inference_runtime.json',ROOT/'server_evidence/server_source_audit.json']},
           'entries':records,'new_inference':False}
 (ROOT/'revision_evidence_ledger.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print('Generated',len(macros),'numerical macros and 5 tables from preserved evidence.')

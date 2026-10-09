@@ -1,7 +1,9 @@
 \documentclass[10pt,letterpaper]{article}
 \usepackage[top=1in,bottom=1in,left=1.5in,right=1.5in]{geometry}
+% Leave room for glyph descenders inside the one-inch bottom text margin.
+\addtolength{\textheight}{-4pt}
 \usepackage{fontspec}
-\input{generated/font_setup.tex}
+\input{generated/font_setup_server.tex}
 \usepackage{amsmath,amssymb,graphicx,booktabs,tabularx,longtable,array}
 \usepackage[font=small,labelfont=bf]{caption}
 \usepackage[round,authoryear]{natbib}
