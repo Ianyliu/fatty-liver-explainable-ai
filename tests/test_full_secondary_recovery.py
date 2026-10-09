@@ -26,13 +26,13 @@ class RecoveryTests(unittest.TestCase):
         reports=[{'original_prediction':dict(reference)},
                  {'original_prediction':dict(reference,p_class1=.71)},
                  {'original_prediction':dict(reference,edges=22)}]
-        primary={'original_prediction':reference,'host':'original-node.example','gpu_name':'original-gpu'}
+        primary={'original_prediction':reference,'host':'original-node.example','gpu_name':'NVIDIA RTX A5000'}
         with patch.object(recovery.base,'check_record',side_effect=reports),patch.object(recovery,'primary_report',return_value=primary):
             output,tasks=recovery.mapping({'loo_records':records},Path('/recovery'))
         self.assertEqual(output[0],records[0]);self.assertEqual(len(tasks),2)
         self.assertEqual([t['patient_index'] for t in tasks],[1,2])
         self.assertEqual([t['task'] for t in tasks],[0,1])
-        self.assertTrue(all(t['required_host']=='original-node' and t['required_gpu_name']=='original-gpu' for t in tasks))
+        self.assertTrue(all(t['primary_host']=='original-node' and t['required_gpu_name']=='NVIDIA RTX A5000' and 'amp01' in t['allowed_hosts'] for t in tasks))
         self.assertEqual(records[1]['directory'],'/old/1')
 
     def test_same_node_mismatch_stops_before_image_removals(self):
@@ -41,11 +41,11 @@ class RecoveryTests(unittest.TestCase):
             child_path=root/'child/plan.json';child_path.parent.mkdir();child_path.write_text('{}')
             primary_path=child_path.parent/'runs/seed-0/report.json';primary_path.parent.mkdir(parents=True);primary_path.write_text('{}')
             item={'patient_index':1,'plan':str(child_path),'directory':str(root/'loo/task-000'),
-                  'original_directory':'/original','required_host':'original','required_gpu_name':'gpu'}
+                  'original_directory':'/original','primary_host':'original','allowed_hosts':['original','same-model-peer'],'required_gpu_name':'gpu'}
             primary={'original_prediction':{'p_class1':.7,'yhat':1,'edges':20}}
             predictor=Mock(return_value={'p_class1':.71,'yhat':1,'edges':20});predictor.torch.cuda.get_device_name.return_value='gpu'
             with patch.object(recovery,'verified',return_value={'loo_tasks':[item]}),patch.object(recovery,'primary_report',return_value=primary),patch.object(recovery.study,'verified_plan',return_value={'images':['a','b','c','d']}),patch.object(recovery.study,'PatientPredictor',return_value=predictor),patch.object(recovery.socket,'gethostname',return_value='original.example'):
-                with self.assertRaisesRegex(ValueError,'Same-node full-set'):
+                with self.assertRaisesRegex(ValueError,'Same-model full-set'):
                     recovery.run(SimpleNamespace(plan=plan_path,task=0))
             self.assertEqual(predictor.call_count,1)
             report=json.loads((Path(item['directory'])/'report.json').read_text())

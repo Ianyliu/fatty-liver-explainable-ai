@@ -23,6 +23,12 @@ import patient_study as study
 
 ROOT=Path(__file__).resolve().parents[1]
 ORIGINAL_VERIFIED=base.verified
+GPU_POOLS={
+    'NVIDIA RTX A5000':[f'amp{i:02}' for i in range(1,7)],
+    'NVIDIA RTX A5500':[f'centurion{i:02}' for i in range(1,10)],
+    'Tesla V100-SXM2-32GB':[f'p{i:02}' for i in range(1,5)],
+    'NVIDIA H200 NVL':['h200a','h200b']}
+
 SOURCES=['scripts/full_secondary_recovery.py','scripts/integrate_full_secondary_recovery.py',
          'slurm/full_secondary_recovery_loo.sbatch','slurm/full_secondary_recovery_stage.sbatch']
 
@@ -45,8 +51,8 @@ def mapping(original,root):
         index=len(tasks)
         replacement={**item,'task':index,'reused':False,'source_patient_index':item['patient_index'],
             'source_plan':str(root/'plan.json'),'directory':str(root/'loo'/f'task-{index:03}'),
-            'original_directory':item['directory'],'required_host':primary['host'].split('.')[0],
-            'required_gpu_name':primary['gpu_name']}
+            'original_directory':item['directory'],'primary_host':primary['host'].split('.')[0],
+            'required_gpu_name':primary['gpu_name'],'allowed_hosts':GPU_POOLS[primary['gpu_name']]}
         records.append(replacement);tasks.append(replacement)
     return records,tasks
 
@@ -61,7 +67,7 @@ def verified(path):
         base.require(plan[key]==original[key],'Recovery changed original settings/mapping: '+key)
     expected_records,expected_tasks=mapping(original,path.parent)
     base.require(plan['loo_records']==expected_records and plan['loo_tasks']==expected_tasks,
-                 'Recovery retry selection or original-node requirement changed')
+                 'Recovery retry selection or same-model GPU requirement changed')
     base.require(len(expected_tasks)==38 and len(expected_records)==135,'Recovery coverage changed')
     return plan
 
@@ -84,14 +90,14 @@ def prepare(args):
         'recovery_created_at':datetime.now(timezone.utc).isoformat(),'cpu_tasks':[],
         'loo_records':records,'loo_tasks':tasks,'recovery_model_queries':queries,
         'original_loo_queries':3207,'total_executed_loo_queries':3207+queries,
-        'recovery_policy':'Rerun every full-set probability OR edge-count mismatch on its exact primary seed-0 node and GPU model; unchanged 1e-6 absolute/relative tolerance, checkpoint and inference.',
+        'recovery_policy':'Rerun every full-set probability OR edge-count mismatch on its primary seed-0 GPU model on an eligible node; unchanged 1e-6 absolute/relative tolerance, checkpoint and inference.',
         'git_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
         'files':[base.hashed(p) for p in [args.base_plan.resolve(),*reports,*[ROOT/name for name in SOURCES]]]}
     for name in SOURCES:
         destination=root/'source_snapshot'/name;destination.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(ROOT/name,destination)
     study.write_json(root/'plan.json',plan)
     print(json.dumps({'plan':str(root/'plan.json'),'retries':len(tasks),'additional_queries':queries,
-        'groups':dict(Counter(t['required_host'] for t in tasks))},indent=2))
+        'groups':dict(Counter(t['required_gpu_name'] for t in tasks))},indent=2))
 
 
 def run(args):
@@ -101,11 +107,12 @@ def run(args):
     report={'status':'running','command':'loo','task':args.task,'patient_index':item['patient_index'],
         'seed':0,'plan_sha256':study.sha256(args.plan),'slurm_job_id':os.getenv('SLURM_JOB_ID'),
         'host':socket.gethostname(),'device':'cuda:0','input_hashes':[base.hashed(Path(item['plan']).parent/'runs/seed-0/report.json')],
-        'original_directory':item['original_directory'],'required_host':item['required_host'],
+        'original_directory':item['original_directory'],'primary_host':item['primary_host'],
+        'allowed_hosts':item['allowed_hosts'],
         'required_gpu_name':item['required_gpu_name']}
     study.write_json(output/'report.json',report);started=time.monotonic();calls=0
     try:
-        base.require(socket.gethostname().split('.')[0]==item['required_host'],'Retry not on original primary node')
+        base.require(socket.gethostname().split('.')[0] in item['allowed_hosts'],'Retry outside eligible same-model node pool')
         predictor=study.PatientPredictor(child,'cuda:0',2,0)
         report['gpu_name']=predictor.torch.cuda.get_device_name(predictor.device)
         base.require(report['gpu_name']==item['required_gpu_name'],'Retry not on original GPU model')
@@ -116,7 +123,7 @@ def run(args):
                 base.require(selected==child['images'],'First retry query must be full image set')
                 report['full_set_comparison']={'primary':primary['original_prediction'],'retry':result}
                 base.require(match_original(result,primary['original_prediction']),
-                             'Same-node full-set probability/graph mismatch; keep gate closed')
+                             'Same-model full-set probability/graph mismatch; keep gate closed')
             return result
         report.update(base.extra.loo_analysis(child,output,predict))
         base.validate_loo(child,report,base.read_rows(output/'leave_one_out.csv'))
@@ -127,7 +134,7 @@ def run(args):
     finally:
         report['actual_model_queries']=calls;report['elapsed_seconds']=time.monotonic()-started
         study.write_json(output/'report.json',report)
-    print('Passed original-node LOO recovery:',args.task,'patient ordinal',item['patient_index'])
+    print('Passed same-model LOO recovery:',args.task,'patient ordinal',item['patient_index'])
 
 
 def summarize(args):
@@ -146,7 +153,7 @@ def summarize(args):
     # records separately because one of the ten pilot LOO baselines was repeated.
     analysis['recovery']['selected_pilot_loo_patients']=sum(r['reused'] for r in plan['loo_records'])
     analysis['recovery']['selected_recovery_patients']=len(plan['loo_tasks'])
-    analysis['limitations'].append('GPU-dependent full-set differences required 38 exact-primary-node LOO reruns. Original seed runs used heterogeneous GPUs, so seed stability can include hardware numerical variability.')
+    analysis['limitations'].append('GPU-dependent full-set differences required 38 same-primary-model LOO reruns. Original seed runs used heterogeneous GPUs, so seed stability can include hardware numerical variability.')
     study.write_json(output,analysis)
 
 
@@ -157,7 +164,7 @@ def report(args):
     reporting.main()
     root=args.plan.resolve().parent/'report';readme=root/'README.md';s=readme.read_text()
     s=s.replace('Thirty CPU records and ten LOO baselines are reused from the pilot.',
-        'Thirty CPU records and nine selected LOO baselines are reused from the pilot. The other pilot LOO baseline is among 38 exact-primary-node recovery runs. Selected analysis uses 3,207 LOO calls; 4,163 were executed in total, including 956 recovery calls. Original artifacts are retained.')
+        'Thirty CPU records and nine selected LOO baselines are reused from the pilot. The other pilot LOO baseline is among 38 same-primary-model recovery runs. Selected analysis uses 3,207 LOO calls; 4,163 were executed in total, including 956 recovery calls. Original artifacts are retained.')
     readme.write_text(s)
     ledger=json.loads((root/'evidence_ledger.json').read_text())
     ledger['recovery']=json.loads((args.plan.resolve().parent/'summary/analysis.json').read_text())['recovery']
