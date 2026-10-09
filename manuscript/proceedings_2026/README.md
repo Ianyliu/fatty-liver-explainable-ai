@@ -15,6 +15,8 @@ From the repository root, run:
 
 The wrapper verifies licensed local Times New Roman hashes/family, regenerates rounded summaries from original full-precision evidence, runs `latexmk -xelatex -interaction=nonstopmode -halt-on-error main.tex`, checks critical TeX diagnostics, letter size and embedding, and saves the new PDF and build checks. It consumes the package's revised text, never an older exporter. Omit `--latexmk` when the program is on PATH. This server's locally downloaded latexmk is `outputs/revision_audit_20261008/tools/latexmk` (version 4.87).
 
+The current formatting uses 10-point Times New Roman for the body, abstract, affiliations, captions, tables and table notes, with fully justified references. The summary generator preserves those table font sizes on regeneration. Titles/headings, mathematical notation and preserved figure artwork retain their conventional typography.
+
 For evidence checks without inference:
 
 ```sh

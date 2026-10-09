@@ -5,25 +5,27 @@
 \usepackage{fontspec}
 \input{generated/font_setup_server.tex}
 \usepackage{amsmath,amssymb,graphicx,booktabs,tabularx,longtable,array}
-\usepackage[font=small,labelfont=bf]{caption}
+\usepackage[font=normalsize,labelfont=bf]{caption}
 \usepackage[round,authoryear]{natbib}
 \usepackage[hidelinks]{hyperref}
 \frenchspacing
 \setlength{\parindent}{1em}
 \setlength{\parskip}{0.2em}
 \setlength{\emergencystretch}{1em}
+% Keep abstract text at the same 10-point size as the body.
+\renewenvironment{abstract}{%
+  \begin{center}\bfseries\abstractname\end{center}%
+  \begin{quotation}\normalsize
+}{\end{quotation}}
 \input{generated/results.tex}
 \title{Explainable Disease Classification via Multi-Ultrasound Images using Graph Neural Networks}
-\author{Ian Liu\\{\small Dartmouth College}\\{\small Northern Medical Center}\and Tso-Jung Yen\\{\small Institute of Statistical Science}\\{\small Academia Sinica}}
+\author{Ian Liu\\{\normalsize Dartmouth College}\\{\normalsize Northern Medical Center}\and Tso-Jung Yen\\{\normalsize Institute of Statistical Science}\\{\normalsize Academia Sinica}}
 \date{}
 \begin{document}
 \maketitle
 \input{body.tex}
 \bibliographystyle{plainnat}
-\begingroup
-\raggedright
 \bibliography{references}
-\endgroup
 \appendix
 \numberwithin{equation}{section}
 \input{appendix.tex}

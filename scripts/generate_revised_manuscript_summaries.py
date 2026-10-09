@@ -69,11 +69,11 @@ captions = {
 
 def table(path, caption, label, headers, rows, spec=None, foot=''):
     spec = spec or '@{}>{\\raggedright\\arraybackslash}X'+'r'*(len(headers)-1)+'@{}'
-    text='\\begin{table}[!htbp]\\centering\\small\n\\caption{'+caption+'}\\label{'+label+'}\n'
+    text='\\begin{table}[!htbp]\\centering\\normalsize\n\\caption{'+caption+'}\\label{'+label+'}\n'
     text+='\\begin{tabularx}{\\linewidth}{'+spec+'}\\toprule\n'+' & '.join(headers)+r' \\\midrule'+'\n'
     text+='\n'.join(' & '.join(row)+' \\\\' for row in rows)
     text+='\n\\bottomrule\\end{tabularx}\n'
-    if foot: text+='\\par\\vspace{0.3em}{\\footnotesize '+foot+'}\n'
+    if foot: text+='\\par\\vspace{0.3em}\\parbox{\\linewidth}{\\normalsize '+foot+'}\n'
     text+='\\end{table}\n'
     (GEN/path).write_text(text)
     records.append({'id':'table:'+label,'headers':headers,'display_rows':rows,'source':'claims:primary and table:secondary; original validated ledger'})
