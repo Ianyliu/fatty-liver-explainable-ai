@@ -1,18 +1,10 @@
-# Accepted abstract versus revised proceedings abstract
+# Abstract wording update
 
-The exact accepted text is preserved in `accepted_abstract.txt`, with the official JSM URL and SHA-256 in `accepted_abstract.json`. The revised source is `abstract.tex`; each built package includes the populated revised text and a comparison with the accepted version.
+The latest user-supplied abstract is installed in `abstract.tex` and the private editable package. The displayed text follows that request exactly; LaTeX escapes the percent sign and retains the evidence-backed MAE macros, displaying 0.066 and 0.119.
 
-The title and the original sequence of ideas are retained: GNN diagnosis and interpretability → LIME applied to image subsets → two-stage adaptive sampling → conditional and marginal explanations → study application and visual explanation.
+Two scientific discrepancies remain for author review outside the manuscript:
 
-| Accepted statement | Revision and scientific reason |
-| --- | --- |
-| “computer-aided diagnosis” | Specifies multiple ultrasound images to make the grouped prediction setting explicit. |
-| “images subsets (subgraphs)” | Grammatical correction to “image subsets (subgraphs)”; contribution unchanged. |
-| Stage II draws 85% from the minority class pool “to ensure an informative design matrix” | Retains the intended 85/15 strategy, identifies singleton-predicted pools and the underrepresented subset class, and removes the unsupported guarantee. |
-| Ridge/Elastic Net classifiers with 10-fold CV | Updates only the inaccurate method: fixed-alpha Ridge probability regression and training-only cross-validated Elastic Net; five-fold settings are detailed in Methods. |
-| Bootstrap standard errors and confidence intervals | Removed because current completed experiments do not validate bootstrap inference. No alternative uncertainty estimates are invented. |
-| Efficacy on 135 patients and intuitive explanations for clinicians | Uses the latest fully validated build population and a restrained principal finding. Clinical benefit is not established; visual explanations support examination of model behavior. |
+- The requested “10-fold cross-validated Elastic Net” conflicts with the frozen five-fold training-only CV and the appendix. No inference or tuning settings were changed.
+- Stage II requests an 85% deficient-class pool allocation, with integer rounding and pool-shortage reallocation. The wording “drawing 85% ... to ensure an informative design matrix” overstates the achieved fraction and guarantee. The source implementation is `sampling_marginal_relation_pipeline.py:289,319–322`.
 
-The revised abstract avoids implementation repairs, configuration discrepancies and lists of unperformed analyses. The unfavorable fidelity and balance findings remain explicit in Results and Discussion, with a concise qualification in the abstract. Full and pilot populations are never interchanged silently.
-
-The final full-cohort update replaces the pilot-based finding with the validated observation that adaptive sampling brings patient-mean prediction proportions closer to balance in 126 of 135 patients, while random sampling has lower mean probability-surrogate error. The population sentence explicitly confines supplementary explanation methods to ten patients. Improved class coverage is distinguished from exact quota attainment and fidelity; neither clinical benefit nor statistical significance is claimed. These populated numerical claims are generated from the evidence ledger.
+See the private `server_evidence/abstract_author_revision.json` for the exact request and backup location. These statements were retained as explicitly requested wording; they are not newly verified scientific claims. Publication/submission remains pending author review and source permissions.

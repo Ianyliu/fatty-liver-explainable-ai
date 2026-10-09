@@ -139,13 +139,19 @@ assert runtime['verification']['python_run_counts'] == {'3.9.25': 405}
 records.append({'id':'claim:inference_runtime','values':{k:runtime[k] for k in ('python','torch','torchvision','torch-geometric','usflc_xai_version','usflc_xai_commit')},'source':'server_evidence/inference_runtime.json; frozen plans and 405 run reports'})
 records.append({'id':'claim:architecture','source':'server_evidence/server_source_audit.json; usflc_xai/models.py:50-105,240-245; datasets.py:465-480; scripts/patient_study.py:180-202','validation':'constructor, checkpoint state dimensions and frozen source hashes inspected; no inference'})
 records.append({'id':'claim:illustrative_panel_provenance','source':'server_evidence/figure2_source_inventory.json; original follow-up report','validation':'candidate tables located; exact fit-to-panel linkage unresolved; original PDF bytes preserved'})
+author_revision = ROOT/'server_evidence/abstract_author_revision.json'
+if author_revision.exists():
+    author_request = json.loads(author_revision.read_text())
+    records.append({'id':'claim:author_requested_abstract','source':'server_evidence/abstract_author_revision.json','validation':'Author-requested wording; scientific discrepancies pending review','unresolved_claims':[d['claim'] for d in author_request['scientific_discrepancies']]})
 for record in records:
     if record['id'].startswith('table:'):
         record['precision_policy']='3 decimal places for response/rank metrics; 2 for percentages and design descriptives'
 manifest={'source_ledger_sha256':hashlib.sha256((ROOT/'evidence_ledger_original.json').read_bytes()).hexdigest(),
           'source_metrics_sha256':hashlib.sha256((GEN/'metrics.json').read_bytes()).hexdigest(),
           'source_secondary_sha256':hashlib.sha256((GEN/'secondary.csv').read_bytes()).hexdigest(),
-          'revision_source_hashes':{str(f.relative_to(ROOT)):hashlib.sha256(f.read_bytes()).hexdigest() for f in [ROOT/'latex/body.tex',ROOT/'latex/appendix.tex',ROOT/'latex/main.tex',ROOT/'latex/references.bib',ROOT/'scripts/generate_manuscript_summaries.py',ROOT/'server_evidence/inference_runtime.json',ROOT/'server_evidence/server_source_audit.json']},
+          'revision_source_hashes':{str(f.relative_to(ROOT)):hashlib.sha256(f.read_bytes()).hexdigest() for f in [ROOT/'latex/abstract.tex',ROOT/'latex/body.tex',ROOT/'latex/appendix.tex',ROOT/'latex/main.tex',ROOT/'latex/references.bib',ROOT/'scripts/generate_manuscript_summaries.py',ROOT/'server_evidence/inference_runtime.json',ROOT/'server_evidence/server_source_audit.json']},
           'entries':records,'new_inference':False}
+if author_revision.exists():
+    manifest['author_abstract_revision_sha256'] = hashlib.sha256(author_revision.read_bytes()).hexdigest()
 (ROOT/'revision_evidence_ledger.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print('Generated',len(macros),'numerical macros and 5 tables from preserved evidence.')
