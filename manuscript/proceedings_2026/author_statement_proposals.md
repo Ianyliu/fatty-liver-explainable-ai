@@ -4,7 +4,7 @@ Private author-review document. None of the alternatives below is an author decl
 
 | Item | Proposed wording or action | Information needed |
 | --- | --- | --- |
-| Authors | Ian Liu; Tso-Jung Yen, in that provisional order. | Both authors confirm order and final content; current institutional names, departments, cities and countries. Prof. Yen's 2024 affiliation was Institute of Statistical Science, Academia Sinica; do not assume it is unchanged. |
+| Authors | Ian Liu: Dartmouth College (primary), Northern Medical Center (secondary). Tso-Jung Yen: Institute of Statistical Science, Academia Sinica. Affiliations supplied by Ian on October 8, 2026; author order remains provisional. | Both authors confirm order and final content. Corresponding-author details remain outstanding. |
 | Correspondence | Correspondence to the designated corresponding author at the approved email address. | Name, institutional postal address and email; neither is inferred from server accounts. |
 | Contributions | “Study conception and supervision: [confirmed names]. GNN development: [confirmed names]. Explanation-method development: [confirmed names]. Computational experiments and validation: [confirmed names]. Writing and revision: [confirmed names]. Both authors approved the final manuscript.” | Assign each role, distinguish original model development from this secondary study, and confirm final approval before using the last sentence. |
 | Funding | “This work was supported by [funder and grant numbers].” If applicable and confirmed: “This work received no specific grant from a funding agency.” | Work-specific support from both authors, including relevant computing support; do not inherit the 2024 paper's grants. |
