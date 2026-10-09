@@ -1,23 +1,139 @@
-\section{Additional diagnostics: ten patients only}
-Table~\ref{tab:secondary} and Figure~\ref{fig:diagnostics} concern the ten-patient convenience cohort, regardless of the primary analysis population. They do not imply expanded Elastic Net, Pearson stability or LOO experiments.
-Spearman correlation uses average ranks for ties. Top-five sets use a fixed image-ID tie rule; sign agreement treats absolute coefficients at most $10^{-10}$ as zero. Patient stability requires defined nonconstant vectors across all three seeds. LOO agreement is unavailable when either ranking or effect vector is constant. Displayed dispersion describes patient estimates rather than inferential uncertainty.
-\input{generated/secondary.tex}
-\begin{figure}[!htbp]\centering\includegraphics[width=\linewidth]{figures/figure6_diagnostics.pdf}\caption{\DiagnosticsCaption}\label{fig:diagnostics}\end{figure}
+\section{Sampling distribution and adaptive allocation}\label{app:sampling}
+For one patient, suppress $i$ and let $n$ denote the number of images. A random mask has probability
+\begin{equation}
+\Pr_R(\boldsymbol U=\boldsymbol u)=
+\frac{1}{n-2}\binom{n}{k}^{-1},\qquad
+k=\sum_{j=1}^n u_j\in\{3,\ldots,n\}.
+\label{eq:maskprob}
+\end{equation}
+This follows by multiplying the uniform probability of size $k$ by the probability of selecting that particular $k$-image subset. Consequently, masks are equiprobable within a size but not across sizes. Nearly complete masks have few alternatives and can recur frequently.
 
-\section{Validated patient-level explanation example}
-The current example uses one pilot patient's twenty ultrasound images, random sampling and means over seeds 0, 1 and 2. A common image order aligns Pearson, Elastic Net and Ridge estimates without treating their different units as interchangeable. The patient is the first in the frozen pilot ordering with defined, nonconstant vectors for all methods, arms and seeds, rather than a case selected for favorable evaluation performance. \ImageInfluenceContrast{}
-\begin{figure}[!htbp]\centering\includegraphics[width=\linewidth]{figures/figure7_current_influence.pdf}\caption{\CurrentInfluenceCaption}\label{fig:current-influence}\end{figure}
+Let $z_i(\boldsymbol u)$ be the model's predicted class and define singleton pools
+\begin{equation}
+P_i^+=\{j:z_i(\boldsymbol e_j)=1\},\quad
+P_i^-=\{j:z_i(\boldsymbol e_j)=0\},\quad
+p_i=|P_i^+|,\quad m_i=|P_i^-|.
+\end{equation}
+Here $\boldsymbol e_j$ retains image $j$ alone. Before draw $r$, accumulated subset-prediction counts are
+\begin{equation}
+N_c(r-1)=\sum_{\ell=1}^{r-1}\mathbf 1\{z_i(\boldsymbol u_\ell)=c\},
+\qquad c\in\{0,1\}.
+\end{equation}
+With $B=1{,}000$ and $T_0=T_1=500$, the draw is random when both $N_c<T_c$, or when either singleton pool is empty. Otherwise Stage II sets
+\begin{equation}
+\rho_r=\begin{cases}0.85,&N_1(r-1)<T_1,\\0.15,&N_1(r-1)\ge T_1,\end{cases}
+\qquad K_r\sim\operatorname{Unif}\{3,\ldots,n_i\},
+\end{equation}
+and samples $c_i(K_r,\rho_r)$ images from $P_i^+$ and $K_r-c_i(K_r,\rho_r)$ from $P_i^-$. Counts are updated from the resulting grouped prediction. Sampling stops at the fixed row budget; it does not continue until balance is attained.
 
-\section{Historical and implemented methodology}
-The accepted abstract and original workflow describe hard-label regularized classifiers, ten-fold tuning and historical bootstrap uncertainty. The present analysis instead uses class-1 probability regression, fixed-alpha Ridge, and training-only five-fold Elastic Net selection. No current bootstrap intervals, significance tests or physician validation are reported. The original illustration is reproduced unchanged as main Figure 1, with its historical labels qualified in the caption. Its original PNG and editable draw.io source are also preserved in the private evidence package.
+During Stage II, conditional on $K_r$, the count history and two nonempty pools, each feasible subset of the specified pool composition has probability
+\begin{equation}
+\Pr_A(\mathcal X_i(\boldsymbol U_r)=S\mid K_r,\mathcal H_{r-1})=
+\left\{\binom{p_i}{c_i}\binom{m_i}{K_r-c_i}\right\}^{-1},
+\end{equation}
+with probability zero for other compositions. The history $\mathcal H_{r-1}$ determines which class is deficient. Reallocation occurs precisely when $c_i\ne\lfloor\rho_rK_r\rfloor$. Requested pool composition and prediction-class balance are therefore different features of the procedure.
 
-The current graph edge threshold is $>0.95$, whereas the source publication describes $0.995$. The supplied split09 checkpoint and preprocessing are fixed; no retraining or conformal-risk inference is performed. Before the frozen study, sampler repairs addressed column mapping, class-label normalization, budgets, seed/state handling and pool-capacity reallocation. Those repairs are implementation provenance, not changes made in response to the comparative findings.
+\section{Regularized surrogate objectives}\label{app:regression}
+For a design $U\in\{0,1\}^{B\times n}$ and responses $\boldsymbol q$, define centered quantities
+\begin{equation}
+M=I_B-B^{-1}\boldsymbol1\boldsymbol1^{\mathsf T},\qquad
+\widetilde U=MU,\qquad \widetilde{\boldsymbol q}=M\boldsymbol q.
+\end{equation}
+The unpenalized intercept permits the Ridge solution
+\begin{align}
+\widehat{\boldsymbol\beta}_R&=
+(\widetilde U^{\mathsf T}\widetilde U+\lambda I_n)^{-1}
+\widetilde U^{\mathsf T}\widetilde{\boldsymbol q},\quad\lambda=1,\\
+\widehat b_R&=\bar q-\bar{\boldsymbol u}^{\mathsf T}\widehat{\boldsymbol\beta}_R.
+\end{align}
+If $d_j$ are the singular values of $\widetilde U$, the coefficient along each right-singular direction is multiplied by $d_j/(d_j^2+\lambda)$ instead of the least-squares factor $1/d_j$. This is the source of shrinkage. The slope effective degrees of freedom are
+\begin{equation}
+\operatorname{df}_{\mathrm{slope}}=\sum_{j=1}^{n}\frac{d_j^2}{d_j^2+\lambda}.
+\end{equation}
 
-\section{Reproducibility and metric availability}
-A private evidence package records frozen plans, query ledgers, source/input hashes, independent validation, generated numerical tables, figure source, reference verification and build commands. Full-cohort reporting requires all 135 patients and 405 planned patient--seed runs, and does not substitute partial aggregates. Environment and smoke checks, image-transfer hashes and eligible image coverage were verified before expansion.
+The Elastic Net fit uses the objective
+\begin{equation}
+\min_{b,\boldsymbol\beta}
+\left\{\frac{1}{2B}\|\boldsymbol q-b\boldsymbol1-U\boldsymbol\beta\|_2^2
++\alpha\eta\|\boldsymbol\beta\|_1
++\frac{\alpha(1-\eta)}{2}\|\boldsymbol\beta\|_2^2\right\}.
+\label{eq:enet}
+\end{equation}
+The mixing parameter $\eta=1$ gives the Lasso penalty \citep{tibshirani1996lasso}; smaller values add Ridge shrinkage \citep{zou2005elasticnet}. Its $1/(2B)$ loss scaling differs from equation~\eqref{eq:ridge}, so numerically identical penalty parameters need not represent identical shrinkage. We selected $\alpha$ from 25 logarithmically spaced values in $[10^{-4},1]$ and $\eta\in\{0.1,0.5,0.9,1\}$ by shuffled five-fold training-only cross-validation minimizing mean squared error. An intercept was fitted, predictors were not standardized, and no evaluation responses entered selection. All training rows had equal weight; no locality kernel or probability clipping was applied.
 
-The pilot used \PilotQueries{} P0 calls; ten-patient LOO added \PilotLOOQueries{} calls. Repeated masks consume fresh calls, and adaptive singleton/constructor probes are additional overhead. Publication calculations use saved artifacts and add no GNN inference. Raw ledgers reconcile masks, probability responses, fits, evaluation membership and actual-grid deletion AUC.
+\section{Marginal association and subset size}\label{app:marginal}
+For image $j$, the sample Pearson coefficient is
+\begin{equation}
+\widehat r_j=
+\frac{\sum_{r=1}^B(u_{rj}-\bar u_j)(q_r-\bar q)}
+{\{\sum_{r=1}^B(u_{rj}-\bar u_j)^2
+\sum_{r=1}^B(q_r-\bar q)^2\}^{1/2}}.
+\end{equation}
+It is undefined when either variable has zero variance. For a binary indicator $U_j$ with inclusion probability $\pi_j$ and a nonconstant response $Q$,
+\begin{equation}
+\operatorname{Cor}(U_j,Q)=
+\frac{\sqrt{\pi_j(1-\pi_j)}}{\operatorname{SD}(Q)}
+\{\operatorname E(Q\mid U_j=1)-\operatorname E(Q\mid U_j=0)\}.
+\end{equation}
+Thus correlation compares the average responses of two collections of subsets whose remaining images may differ. It is not the regression coefficient conditional on the other inclusion indicators.
 
-Shared-novel support and one-class evaluation counts accompany the fidelity table. Any undefined seed metric remains undefined at the patient level; patient availability is reported explicitly. Complete-cohort means are unavailable when any planned patient lacks the required metric. Seeds, masks, CV folds and seed pairs do not inflate the patient sample size. Descriptive SD uses patient means and is not a standard error.
+Under the random design, exchangeability gives $\operatorname E(U_j\mid K)=K/n$. Therefore
+\begin{align}
+\operatorname{Cov}(U_j,K)
+&=\operatorname E\{K\operatorname E(U_j\mid K)\}
+-\operatorname E(U_j)\operatorname E(K)\\
+&=\operatorname{Var}(K)/n.
+\end{align}
+For $K\sim\operatorname{Unif}\{3,\ldots,n\}$,
+\begin{equation}
+\operatorname E(K)=\frac{n+3}{2},\qquad
+\operatorname{Var}(K)=\frac{(n-2)^2-1}{12}.
+\end{equation}
+For $n>3$, this covariance is positive. Its contribution to marginal response association depends on how $q_i(\boldsymbol u)$ varies with size. The identity applies to random sampling; adaptive pool selection changes the inclusion distribution.
 
-Additional query-matched studies, pool-ratio and subset-size sensitivity, repeated random deletion orders, additional multi-node rankings, expanded secondary analyses, bootstrap inference and physician evaluation remain future work.
+\section{Evaluation and patient-level aggregation}\label{app:evaluation}
+Let $\mathcal T_{isR}$ and $\mathcal T_{isA}$ be the sets of training masks, and let $(\boldsymbol v_\ell)_{\ell=1}^{200}$ be the independent random evaluation draws. The retained evaluation multiset is
+\begin{equation}
+\mathcal E_{is}=\{\boldsymbol v_\ell:\boldsymbol v_\ell\notin
+\mathcal T_{isR}\cup\mathcal T_{isA}\},
+\end{equation}
+where membership is checked by mask and repeated evaluation draws retain their multiplicity. The arm-specific constant is $\bar q_{isa}=B^{-1}\sum_rq_i(\boldsymbol u_{isar})$. Its MAE uses the same $\mathcal E_{is}$ as the fitted surrogate. Since few distinct masks exist at sizes close to $n_i$, novelty filtering can alter the size distribution of the evaluation sets.
+
+For any metric $h_{isa}$ available at all three seeds,
+\begin{equation}
+\bar h_{ia}=\frac13\sum_{s=0}^2h_{isa},\quad
+\bar h_a=\frac1N\sum_{i=1}^N\bar h_{ia},\quad
+\overline\Delta=\frac1N\sum_{i=1}^N(\bar h_{iA}-\bar h_{iR}).
+\end{equation}
+Dispersion is the sample standard deviation across patient means, rather than across subsets or seeds. For partially defined rank metrics, available-patient summaries use the stated number of patients with complete seed comparisons. Undefined values are not assigned zero.
+
+For deletion order $o$, let $d_t$ be distinct integer deletion counts obtained by flooring nominal fractions of $n_i$ and retaining at least three images. Put $f_t=d_t/n_i$ and let $q_t^{(o)}$ be the response after removal of the first $d_t$ images. Raw AUC is
+\begin{equation}
+A_{isa}^{(o)}=
+\sum_{t=1}^{T}\frac{q_{t-1}^{(o)}+q_t^{(o)}}2(f_t-f_{t-1}).
+\end{equation}
+The grid is patient-specific and spans at most $0.5$, so $0\le A^{(o)}\le0.5$. Descending-minus-random and descending-minus-ascending contrasts are formed before averaging seeds. One seeded random order per patient and seed is shared by the training schemes. Tied coefficients are ordered by a fixed image-label rule.
+
+Single-image omission effects are
+\begin{equation}
+\delta_{ij}=q_i(\boldsymbol1)-q_i(\boldsymbol1-\boldsymbol e_j),\qquad
+D_i=\frac1{n_i}\sum_{j=1}^{n_i}|\delta_{ij}|.
+\end{equation}
+Ranking--LOO agreement is the Spearman correlation between the fitted image estimates and $\boldsymbol\delta_i$, averaged over training seeds. A constant effect or ranking vector makes this correlation undefined. The full-set and omission predictions use one evaluated baseline per patient.
+
+Repeatability compares the three seed pairs. Spearman correlation uses average ranks for ties. If $T_s$ contains the five highest-ranked images at seed $s$, top-five overlap is $|T_s\cap T_{s'}|/|T_s\cup T_{s'}|$. Sign agreement is the fraction of images whose signs match; estimates with absolute value at most $10^{-10}$ are treated as zero. Pair-specific scores are averaged within patient, requiring defined nonconstant vectors for all seed pairs.
+
+\section{Additional results}\label{app:additional}
+Table~\ref{tab:stability} compares repeatability and LOO agreement across the three explanation summaries. Rank and sign agreement describe different aspects of repeatability: a method can retain the leading images while changing small coefficient signs. The defined counts identify examinations for which the complete comparison is available. Figure~\ref{fig:enet} displays paired Elastic Net--Ridge fidelity; Figure~\ref{fig:loo} displays variation in single-image effects and agreement with the rankings.
+\input{generated/stability.tex}
+\begin{figure}[!htbp]\centering\includegraphics[width=\linewidth]{figures/secondary_fidelity.pdf}
+\caption{Ridge and Elastic Net fidelity on the same held-out subsets. Points connect three-seed patient means; diamonds denote cohort means. Lower MAE indicates better probability approximation.}\label{fig:enet}\end{figure}
+\begin{figure}[!htbp]\centering\includegraphics[width=\linewidth]{figures/loo_behavior.pdf}
+\caption{Single-image omission and ranking agreement. A: mean absolute LOO probability change for each patient, ordered by magnitude. B: patient-mean Spearman correlations between image rankings and LOO effects; labels give defined patient counts.}\label{fig:loo}\end{figure}
+
+\section{Software and computational details}\label{app:software}
+Analyses were implemented in Python, with scikit-learn for regularized regression \citep{pedregosa2011sklearn}, NumPy/SciPy for numerical summaries, PyTorch for prediction, and Matplotlib for figure generation. The image encoder used ImageNet-pretrained DenseNet121 weights. Grayscale images were converted to three channels, resized to $224\times224$ and normalized using ImageNet means and standard deviations. The 1,024-dimensional representations entered one graph-attention layer with one head and 512 output features. Graph edges connected image representations with Pearson feature correlation greater than $0.95$; negative or undefined correlations did not create edges, and self-loops were supplied by the attention layer. Two 512-dimensional linear transformations with batch normalization and ReLU, followed by a 1,024-dimensional linear transformation and ReLU, preceded mean pooling and the two-class output. Dropout was disabled during inference.
+
+Each training scheme used 405,000 subset predictions across 135 patients and three seeds. Adaptive sampling additionally required 9,216 singleton predictions and 405 full-set validation predictions. Evaluation and shared random-deletion predictions were counted once across schemes. The sampling, Ridge-fidelity and deletion evaluation used 911,151 model calls; selected LOO baselines used 3,207 calls. Runtime records preserve exact software versions, input hashes, numerical validation and query accounting alongside the reproducibility scripts.
+\input{generated/software_versions.tex}
+\input{generated/design_diagnostics.tex}

@@ -18,7 +18,11 @@
 \maketitle
 \input{body.tex}
 \bibliographystyle{plainnat}
+\begingroup
+\raggedright
 \bibliography{references}
+\endgroup
 \appendix
+\numberwithin{equation}{section}
 \input{appendix.tex}
 \end{document}
